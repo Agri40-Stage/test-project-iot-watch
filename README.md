@@ -38,7 +38,6 @@ Start with the issues in the **"To Do"** column and move them across as you prog
 |----------------|-------------------------------------------------------------------------|
 | 🏗 Project Setup | Proper use of JHipster to scaffold and configure the app               |
 | 🔒 Authentication | Secure login system using JWT and protected API routes                  |
-| 🗃 Database       | MySQL integration with correct schema and data persistence              |
 | 💻 Frontend       | Functional React UI to manage employees with proper state handling     |
 | 📦 API Usage      | Clean and secure usage of RESTful APIs                                 |
 | 🧼 Code Quality   | Maintainable, modular, and readable code                               |
