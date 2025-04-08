@@ -63,7 +63,7 @@ iot-temp-watch/
 
 | Category        | Details                                                                 |
 |----------------|-------------------------------------------------------------------------|
-|----------------|  Figma design
+| Figma design    |  propose or improve a design figma
 | 🏗 Project Setup | Proper use of JHipster to scaffold and configure the app               |
 | 🔒 Authentication | Secure login system using JWT and protected API routes                  |
 | 💻 Frontend       | Functional React UI to manage employees with proper state handling     |
