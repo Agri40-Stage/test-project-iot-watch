@@ -14,6 +14,7 @@ Build a small IoT-enabled web app that:
 - Retrieves temperature or humidity data from a public sensor API
 - Stores and exposes the data via a backend service
 - Displays the data in real time or at regular intervals via a frontend interface
+- integrate AI features (LLM, RAG, Model deep learning, ...)
 
 ---
 
