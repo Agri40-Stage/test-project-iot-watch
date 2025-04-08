@@ -32,7 +32,7 @@ Build a small IoT-enabled web app that:
 - SQLite or local JSON for persistence
 - Docker/Docker Compose
 - GitHub Actions CI
-- <iframe width="1038" height="584" src="https://www.youtube.com/embed/yzeVMecydCE" title="Complete Guide to Open Source - How to Contribute" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+- How to Contribute : https://www.youtube.com/embed/yzeVMecydCE
 
 ---
 ## 🌐 Data Source
