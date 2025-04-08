@@ -72,4 +72,12 @@ iot-temp-watch/
 | 🔁 Git Practices  | Use of Git flow, meaningful commit messages, and clean pull requests   |
 
 ## Evaluation Criteria
-<img width="660" alt="image" src="https://github.com/user-attachments/assets/5a597b9d-b301-4867-a4b7-23b3029b1561" />
+| Area              | Importance |
+|-------------------|------------|
+| Git usage         | ★★★★☆     |
+| Backend functionality | ★★★★☆ |
+| Frontend UX       | ★★★★☆     |
+| Code quality      | ★★★★☆     |
+| Documentation     | ★★★★☆     |
+| Bonus features    | ★★☆☆☆     |
+
