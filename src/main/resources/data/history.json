@@ -1,0 +1,124 @@
+[ {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:24:51.216631500Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:25:21.002229900Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:25:51.029618700Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:26:21.003015500Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:26:51.041009100Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:27:21.020651800Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:27:51.028159700Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:28:21.003915600Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:28:51.010916Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:29:21.031935300Z"
+}, {
+  "temperature" : 18.1,
+  "timestamp" : "2025-04-10T18:29:50.996358100Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:30:20.995515900Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:30:51.013126600Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:31:21.016880Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:31:51.015365Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:32:21.005146Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:32:50.992119500Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:33:20.999576800Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:33:51.002657400Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:34:20.994110Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:34:51.022294400Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:35:20.986645800Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:35:51.017553700Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:36:21.027311Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:36:51.012512200Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:37:21.009042700Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:37:50.993645300Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:38:20.994647500Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:38:51.001062500Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:39:21.001234800Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:39:51.009115300Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:40:20.992650900Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:40:51.004488100Z"
+}, {
+  "temperature" : 18.0,
+  "timestamp" : "2025-04-10T18:41:20.996711600Z"
+}, {
+  "temperature" : 17.8,
+  "timestamp" : "2025-04-10T18:51:13.125313700Z"
+}, {
+  "temperature" : 17.8,
+  "timestamp" : "2025-04-10T18:51:42.872191300Z"
+}, {
+  "temperature" : 17.8,
+  "timestamp" : "2025-04-10T18:52:12.881805900Z"
+}, {
+  "temperature" : 16.8,
+  "timestamp" : "2025-04-11T00:20:50.126208500Z"
+}, {
+  "temperature" : 16.8,
+  "timestamp" : "2025-04-11T00:21:20.153434900Z"
+}, {
+  "temperature" : 16.8,
+  "timestamp" : "2025-04-11T00:21:50.130704900Z"
+}, {
+  "temperature" : 16.8,
+  "timestamp" : "2025-04-11T00:22:20.132649800Z"
+} ]

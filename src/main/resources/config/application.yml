@@ -95,7 +95,7 @@ spring:
     name: testProjectIotWatch
   docker:
     compose:
-      enabled: true
+      enabled: false
       lifecycle-management: start-only
       file: src/main/docker/services.yml
   profiles:
@@ -168,10 +168,15 @@ spring:
       console-available: true
 
 server:
+  port: 8080
   servlet:
     session:
       cookie:
         http-only: true
+    context-path: /
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
 
 springdoc:
   show-actuator: true
@@ -191,13 +196,12 @@ jhipster:
   clientApp:
     name: 'testProjectIotWatchApp'
   # By default CORS is disabled. Uncomment to enable.
-  # cors:
-  #   allowed-origins: "http://localhost:8100,http://localhost:9000"
-  #   allowed-methods: "*"
-  #   allowed-headers: "*"
-  #   exposed-headers: "Authorization,Link,X-Total-Count,X-${jhipster.clientApp.name}-alert,X-${jhipster.clientApp.name}-error,X-${jhipster.clientApp.name}-params"
-  #   allow-credentials: true
-  #   max-age: 1800
+  cors:
+    allowed-origins: 'http://localhost:3000,http://localhost:8080'
+    allowed-methods: 'GET,POST,PUT,DELETE,OPTIONS'
+    allowed-headers: '*'
+    allow-credentials: true
+    max-age: 3600
   mail:
     from: testProjectIotWatch@localhost
   api-docs:
@@ -225,4 +229,8 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
+h2:
+  console:
+    enabled: true
+    settings:
+      web-allow-others: true

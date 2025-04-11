@@ -1,0 +1,616 @@
+/* Login styles */
+.login-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.login-container h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.login-container button {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.login-container button:hover {
+  background-color: #535bf2;
+}
+
+.login-container button:disabled {
+  background-color: #a5a5a5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #ff4444;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.remember-me input {
+  width: auto;
+  margin-right: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Dashboard styles */
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-header h1::before {
+  content: '⌚';
+  font-size: 1.5rem;
+}
+
+.dashboard-controls {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.control-group label {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+}
+
+.control-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.control-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.logout-button {
+  background: linear-gradient(135deg, #ff4b4b 0%, #ff6b6b 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3);
+}
+
+.temperature-display {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.temperature-display::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #646cff, #535bf2);
+}
+
+.temperature-value {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #646cff;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(100, 108, 255, 0.3);
+}
+
+.temperature-value .label {
+  font-size: 1.2rem;
+  color: #a0a0a0;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.temperature-timestamp {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+}
+
+.chart-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.chart-container h2 {
+  color: #fff;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.chart-wrapper {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+  padding: 1rem;
+  height: 400px;
+}
+
+.history-data {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.history-data h2 {
+  color: #fff;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.history-table-container {
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+  padding: 1rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.history-table th,
+.history-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-table th {
+  color: #a0a0a0;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.history-table td {
+  color: #fff;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:hover td {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #a0a0a0;
+  font-size: 1.1rem;
+}
+
+.error {
+  background: rgba(255, 75, 75, 0.1);
+  border: 1px solid rgba(255, 75, 75, 0.2);
+  color: #ff4b4b;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Custom Recharts Styles */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.recharts-text {
+  fill: #a0a0a0;
+}
+
+.recharts-tooltip-wrapper {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .dashboard-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .control-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .temperature-value {
+    font-size: 3rem;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+}
+
+/* Watch Login styles */
+.watch-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 20px;
+}
+
+.watch-face {
+  width: 360px;
+  height: 600px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.watch-bezel {
+  width: 100%;
+  height: 100%;
+  background: #0f0f1a;
+  border-radius: 40px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #2a2a3a;
+}
+
+.watch-bezel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+  border-radius: 40px 40px 0 0;
+}
+
+.watch-bezel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent);
+  border-radius: 0 0 40px 40px;
+}
+
+.watch-screen {
+  width: 95%;
+  height: 95%;
+  background: #0a0a14;
+  border-radius: 30px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.watch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.watch-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.watch-icon {
+  font-size: 24px;
+  color: #646cff;
+}
+
+.watch-logo h1 {
+  font-size: 20px;
+  margin: 0;
+  color: #fff;
+  font-weight: 600;
+}
+
+.watch-time {
+  font-size: 18px;
+  font-weight: 500;
+  color: #646cff;
+}
+
+.watch-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.watch-form h2 {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+
+.watch-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.watch-input-group label {
+  font-size: 14px;
+  color: #aaa;
+}
+
+.watch-input-group input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.watch-input-group input:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+}
+
+.watch-input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.watch-remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.watch-remember-me input {
+  width: 16px;
+  height: 16px;
+  accent-color: #646cff;
+}
+
+.watch-remember-me label {
+  font-size: 14px;
+  color: #aaa;
+}
+
+.watch-button {
+  margin-top: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(100, 108, 255, 0.3);
+}
+
+.watch-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(100, 108, 255, 0.4);
+}
+
+.watch-button:active {
+  transform: translateY(0);
+}
+
+.watch-button:disabled {
+  background: #444;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.watch-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.watch-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #4caf50;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #4caf50;
+}
+
+.status-text {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.watch-battery {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.battery-icon {
+  width: 20px;
+  height: 10px;
+  border: 1px solid #aaa;
+  border-radius: 2px;
+  position: relative;
+}
+
+.battery-icon::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 3px;
+  width: 2px;
+  height: 4px;
+  background: #aaa;
+  border-radius: 0 1px 1px 0;
+}
+
+.battery-level {
+  width: 85%;
+  height: 100%;
+  background: #4caf50;
+  border-radius: 1px;
+}
+
+.watch-battery span {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.error {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* Responsive styles for watch login */
+@media (max-width: 480px) {
+  .watch-face {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .watch-bezel {
+    border-radius: 0;
+  }
+  
+  .watch-screen {
+    border-radius: 0;
+  }
+} 
