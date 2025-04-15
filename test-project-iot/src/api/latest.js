@@ -9,8 +9,13 @@ const fetchLatestTemperature = async () => {
     } else if (response.status === 200) {
       const data = await response.json();
 
+      // Extract the relevant data from the response
       const time = data.current_weather.time;
       const temperature = data.current_weather.temperature;
+
+      // Store the latest temperature in local storage for trend calculation
+      // So in the next fetch, we can compare the latest temperature with the previous one
+      // and determine if the temperature is rising, falling, or stable
       const latestTemperature = localStorage.getItem("latestTemperature") || 0;
 
       let trend = "";
@@ -22,6 +27,8 @@ const fetchLatestTemperature = async () => {
         trend = "stable";
       }
 
+      // After calculating the trend, we update the latest temperature in local storage
+      // to be used in the next fetch
       localStorage.setItem("latestTemperature", temperature);
 
       return { time, temperature, trend };

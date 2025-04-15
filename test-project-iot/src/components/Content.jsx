@@ -9,10 +9,12 @@ import fetchLatestTemperature from "../api/latest";
 import fetchTemperatureHistory from "../api/history";
 
 const Content = () => {
+  // states to store the latest temperature data
   const [latestTemperatureTime, setLatestTemperatureTime] = useState(null);
   const [latestTemperature, setLatestTemperature] = useState(null);
   const [temperatureTrend, setTemperatureTrend] = useState(null);
 
+  // state to store the temperature history data
   const [temperatureData, setTemperatureData] = useState({
     labels: [],
     datasets: [
@@ -30,20 +32,20 @@ const Content = () => {
     }
   });
 
+  // Function to fetch the latest temperature
   const getLatestTemperature = async () => {
     try {
       const data = await fetchLatestTemperature();
-
-      console.log("Latest Temperature API response: ", data);
 
       setLatestTemperatureTime(data.time);
       setLatestTemperature(data.temperature);
       setTemperatureTrend(data.trend);
     } catch (error) {
-      console.log("Error getting latest temperature: ", error);
+      console.error("Error getting latest temperature: ", error);
     }
   }
 
+  // Function to fetch the temperature history for the last 10 hours
   const getTemperatureHistory = async () => {
     try {
       const data = await fetchTemperatureHistory();
@@ -91,7 +93,11 @@ const Content = () => {
       </div>
 
       <div className="grid gap-4 grid-cols-1 xl:grid-cols-[384px_1fr]">
-        <TemperatureCrad time={latestTemperatureTime} temperature={latestTemperature} trend={temperatureTrend} />
+        <TemperatureCrad
+          time={latestTemperatureTime}
+          temperature={latestTemperature}
+          trend={temperatureTrend}
+        />
 
         <TemperatureChart
           chartData={temperatureData}
