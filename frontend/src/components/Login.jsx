@@ -13,6 +13,13 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user was previously remembered
+    const rememberedUser = localStorage.getItem('rememberedUser');
+    if (rememberedUser) {
+      setUsername(rememberedUser);
+      setRememberMe(true);
+    }
+
     // Update time every second
     const timer = setInterval(() => {
       const now = new Date();
@@ -33,20 +40,22 @@ const Login = () => {
 
     try {
       console.log('Attempting login with username:', username);
-      const result = await login(username, password);
+      const result = await login(username, password, rememberMe);
       console.log('Login result:', result);
 
-      if (result) {
+      if (result.success) {
         if (rememberMe) {
           localStorage.setItem('rememberedUser', username);
         } else {
           localStorage.removeItem('rememberedUser');
         }
 
-        // Add a small delay to ensure localStorage is updated
+        // Add a small delay to ensure storage is updated
         setTimeout(() => {
           navigate('/dashboard', { replace: true });
         }, 100);
+      } else {
+        setError(result.message || 'Failed to login. Please try again.');
       }
     } catch (err) {
       console.error('Login error:', err);
