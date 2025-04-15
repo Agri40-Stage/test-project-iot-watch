@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
+/* Icons */
 import { ArrowDownIcon, ArrowUpIcon, ThermometerIcon } from "lucide-react";
 
 const TemperatureCrad = ({ time, temperature, trend }) => {
