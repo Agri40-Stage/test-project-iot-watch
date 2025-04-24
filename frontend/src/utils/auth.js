@@ -38,15 +38,26 @@ api.interceptors.response.use(
   },
 );
 
-export const login = async (username, password) => {
+export const login = async (username, password, rememberMe = false) => {
   try {
-    console.log('Attempting login with:', { username });
-    const response = await api.post('/api/authenticate', { username, password });
+    console.log('Attempting login with:', { username, rememberMe });
+    const response = await api.post('/api/authenticate', {
+      username,
+      password,
+      rememberMe,
+    });
     console.log('Login response:', response.data);
 
     if (response.data.id_token) {
-      localStorage.setItem('auth', response.data.id_token);
-      console.log('Token stored in localStorage');
+      // Store the token in the appropriate storage based on rememberMe
+      if (rememberMe) {
+        localStorage.setItem('auth', response.data.id_token);
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        sessionStorage.setItem('auth', response.data.id_token);
+        localStorage.removeItem('rememberMe');
+      }
+      console.log('Token stored in', rememberMe ? 'localStorage' : 'sessionStorage');
       return { success: true };
     }
     console.log('No token received in response');
@@ -62,17 +73,23 @@ export const login = async (username, password) => {
 
 export const logout = () => {
   localStorage.removeItem('auth');
+  sessionStorage.removeItem('auth');
+  localStorage.removeItem('rememberMe');
   window.location.href = '/';
 };
 
 export const isAuthenticated = () => {
-  const token = localStorage.getItem('auth');
+  // Check both localStorage and sessionStorage for the token
+  const localToken = localStorage.getItem('auth');
+  const sessionToken = sessionStorage.getItem('auth');
+  const token = localToken || sessionToken;
   console.log('isAuthenticated - token exists:', !!token);
   return !!token;
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('auth');
+  // Return token from appropriate storage
+  return localStorage.getItem('auth') || sessionStorage.getItem('auth');
 };
 
 export default api;

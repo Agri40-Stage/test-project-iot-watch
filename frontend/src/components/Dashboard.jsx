@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import api from '../utils/auth';
 import { API_ENDPOINTS } from '../config/api';
 import { logout } from '../utils/auth';
@@ -10,13 +10,17 @@ function Dashboard() {
   const [latestData, setLatestData] = useState(null);
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const [refreshInterval, setRefreshInterval] = useState(10); // seconds
   const [chartDataPoints, setChartDataPoints] = useState(10); // number of data points to show
+  const [chartType, setChartType] = useState('line'); // nouveau state pour le type de graphique
 
   const fetchSensorData = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       setError(null);
       
       // Fetch latest sensor data
@@ -26,6 +30,10 @@ function Dashboard() {
       // Fetch sensor history
       const historyResponse = await api.get(API_ENDPOINTS.SENSOR_HISTORY);
       setHistoryData(historyResponse.data);
+
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     } catch (err) {
       console.error('Error fetching sensor data:', err);
       setError('Failed to fetch sensor data. Please try again later.');
@@ -73,6 +81,50 @@ function Dashboard() {
   const minTemp = Math.min(...chartData.map(d => d.temperature)) - 1;
   const maxTemp = Math.max(...chartData.map(d => d.temperature)) + 1;
 
+  const renderChart = () => {
+    const commonProps = {
+      data: chartData,
+      margin: { top: 5, right: 30, left: 20, bottom: 5 }
+    };
+
+    if (chartType === 'line') {
+      return (
+        <LineChart {...commonProps}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="time" />
+          <YAxis domain={[minTemp, maxTemp]} />
+          <Tooltip />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="temperature"
+            name="Temperature (°C)"
+            stroke="#646cff"
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 8 }}
+          />
+        </LineChart>
+      );
+    } else {
+      return (
+        <BarChart {...commonProps}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="time" />
+          <YAxis domain={[minTemp, maxTemp]} />
+          <Tooltip />
+          <Legend />
+          <Bar
+            dataKey="temperature"
+            name="Temperature (°C)"
+            fill="#646cff"
+            radius={[4, 4, 0, 0]}
+          />
+        </BarChart>
+      );
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -104,13 +156,30 @@ function Dashboard() {
               <option value="10">10</option>
               <option value="20">20</option>
               <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="500">500</option>
+              <option value="1000">1000</option>
+            </select>
+          </div>
+          <div className="control-group">
+            <label htmlFor="chartType">Chart Type:</label>
+            <select
+              id="chartType"
+              value={chartType}
+              onChange={(e) => setChartType(e.target.value)}
+              className="control-select"
+            >
+              <option value="line">Line</option>
+              <option value="bar">Bar</option>
             </select>
           </div>
           <button onClick={handleLogout} className="logout-button">Logout</button>
         </div>
       </div>
       
-      {loading && <div className="loading">Loading sensor data...</div>}
+      {isInitialLoad && loading && (
+        <div className="loading">Loading sensor data...</div>
+      )}
       
       {error && <div className="error">{error}</div>}
       
@@ -120,6 +189,9 @@ function Dashboard() {
             <div className="temperature-value">
               <span className="value">{latestData.temperature}°C</span>
               <span className="label">Current Temperature</span>
+              {!isInitialLoad && loading && (
+                <span className="refresh-indicator">⟳</span>
+              )}
             </div>
             <div className="temperature-timestamp">
               <span className="label">Last Updated:</span>
@@ -134,22 +206,7 @@ function Dashboard() {
           <h2>Temperature History (Last {chartDataPoints} Readings)</h2>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis domain={[minTemp, maxTemp]} />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="temperature" 
-                  name="Temperature (°C)"
-                  stroke="#646cff" 
-                  strokeWidth={2} 
-                  dot={{ r: 4 }} 
-                  activeDot={{ r: 8 }} 
-                />
-              </LineChart>
+              {renderChart()}
             </ResponsiveContainer>
           </div>
         </div>

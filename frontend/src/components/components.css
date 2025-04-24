@@ -1,3 +1,17 @@
+/* Reset CSS pour enlever les marges par défaut */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
 /* Login styles */
 .login-container {
   max-width: 400px;
@@ -67,11 +81,10 @@
 
 /* Dashboard styles */
 .dashboard-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  width: 100%;
   min-height: 100vh;
+  padding: 1rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #fff;
   font-family: 'Inter', sans-serif;
 }
@@ -80,12 +93,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
+  border-radius: 12px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
 }
 
 .dashboard-header h1 {
@@ -104,8 +118,9 @@
 
 .dashboard-controls {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .control-group {
@@ -151,16 +166,16 @@
   box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3);
 }
 
-.temperature-display {
+.temperature-display,
+.chart-container,
+.history-data {
+  width: 100%;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  margin-bottom: 2rem;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
 }
 
 .temperature-display::before {
@@ -193,15 +208,6 @@
   color: #a0a0a0;
 }
 
-.chart-container {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-}
-
 .chart-container h2 {
   color: #fff;
   font-size: 1.4rem;
@@ -210,18 +216,11 @@
 }
 
 .chart-wrapper {
+  width: 100%;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 15px;
+  border-radius: 12px;
   padding: 1rem;
   height: 400px;
-}
-
-.history-data {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
 }
 
 .history-data h2 {
@@ -232,9 +231,10 @@
 }
 
 .history-table-container {
+  width: 100%;
   overflow-x: auto;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 15px;
+  border-radius: 12px;
   padding: 1rem;
 }
 
@@ -306,31 +306,34 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .dashboard-container {
-    padding: 1rem;
+    padding: 0.5rem;
   }
 
   .dashboard-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .temperature-display,
+  .chart-container,
+  .history-data {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 300px;
   }
 
   .dashboard-controls {
     flex-direction: column;
     width: 100%;
+    gap: 0.5rem;
   }
 
   .control-group {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .temperature-value {
-    font-size: 3rem;
-  }
-
-  .chart-wrapper {
-    height: 300px;
   }
 }
 
@@ -613,4 +616,21 @@
   .watch-screen {
     border-radius: 0;
   }
-} 
+}
+
+.refresh-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 1rem;
+  color: #646cff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
