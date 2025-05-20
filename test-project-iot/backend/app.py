@@ -1,30 +1,23 @@
-from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
-import sqlite3
 import os
+import time
 import requests
-from datetime import datetime, timedelta
+import threading
+import sqlite3
+import schedule
 import numpy as np
 import pandas as pd
+from flask_cors import CORS
 from dotenv import load_dotenv
-from tensorflow import keras
+from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
-import os 
 from sklearn.preprocessing import MinMaxScaler
-import numpy as np    
-from sklearn.preprocessing import MinMaxScaler
-import threading
-import time
-import schedule
-from functools import lru_cache
+from flask import Flask, jsonify, request, send_from_directory
+
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-load_dotenv()
-app = Flask(__name__)
-CORS(app)
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24 
@@ -51,9 +44,8 @@ def generate_mock_data(clear_existing=True):
     
     # Generate data for the last 7 days
     base_time = datetime.now() - timedelta(days=7)
-    for i in range(168):  # 7 days * 24 hours
+    for i in range(168):
         timestamp = (base_time + timedelta(hours=i)).isoformat()
-        # Generate temperature with some randomness around the base temperature
         temperature = BASE_TEMP + np.random.normal(0, 2)
         cursor.execute('''
         INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
@@ -156,9 +148,8 @@ def get_current_temperature():
             data = response.json()
             
             if "current_weather" in data:
-                # Get current temperature and timestamp
                 current_temp = data["current_weather"]["temperature"]
-                timestamp = datetime.now().isoformat()  # Use current time for second-level precision
+                timestamp = datetime.now().isoformat()
                 
                 # Store in database
                 conn = get_db_connection()
@@ -254,18 +245,14 @@ def update_all_predictions():
         print(f"[{datetime.now().isoformat()}] Starting daily prediction update for next 5 days...")
         
         conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Clear existing predictions
+        cursor = conn.cursor()        
         cursor.execute('DELETE FROM temperature_predictions')
         conn.commit()
         print("Cleared existing predictions")
         
-        # Update predictions for each of the next 5 days
         prediction_count = 0
         for day in range(1, 6):
             try:
-                # Generate predictions for this day
                 result = predict_for_day(day)
                 if "error" in result:
                     print(f"Error predicting day {day}: {result['error']}")
@@ -290,23 +277,19 @@ def run_background_services():
         """Update temperature data continuously"""
         while True:
             try:
-                get_current_temperature()  # This now handles both getting and storing
-                time.sleep(1)  # Update every second
+                get_current_temperature()
+                time.sleep(1)
             except Exception as e:
                 print(f"Error in temperature updater: {str(e)}")
                 time.sleep(1)
     
     def scheduler():
         """Run scheduled tasks"""
-        # Schedule prediction updates at midnight every day
         schedule.every().day.at("00:00").do(update_all_predictions)
         schedule.every().day.at("00:00").do(purge_old_data)
         
-        # Also run predictions immediately on startup
         print("Performing initial prediction for all 5 days...")
-        update_all_predictions()
-        
-        # Continue checking scheduled tasks
+        update_all_predictions()        
         while True:
             try:
                 schedule.run_pending()
@@ -339,7 +322,6 @@ def get_latest_temperature():
     cursor = conn.cursor()
     
     try:
-        # Get the latest temperature
         cursor.execute('''
         SELECT * FROM temperature_data
         WHERE latitude = ? AND longitude = ?
@@ -350,7 +332,6 @@ def get_latest_temperature():
         latest = cursor.fetchone()
         
         if not latest:
-            # If no data, get current temperature
             current_temp = get_current_temperature()
             return jsonify({
                 "time": datetime.now().isoformat(),
@@ -580,7 +561,6 @@ def predict_temperature():
         conn.close()
         
         if not predictions:
-            # If no predictions found, generate them
             print(f"No predictions found for day {day}, generating new predictions...")
             result = predict_for_day(day)
             return jsonify(result)
@@ -677,9 +657,7 @@ def predict_for_day(day):
             if not history:
                 raise ValueError("No historical data available for predictions")
             
-            # Extract temperatures and convert to numpy array
-            historical_temps = np.array([record[1] for record in history], dtype=np.float32)
-            
+            historical_temps = np.array([record[1] for record in history], dtype=np.float32)            
             scaler = MinMaxScaler(feature_range=(-1, 1))
             data_scaled = scaler.fit_transform(historical_temps.reshape(-1, 1))
             
@@ -722,7 +700,7 @@ def predict_for_day(day):
                 except sqlite3.OperationalError as e:
                     if "database is locked" in str(e):
                         print(f"Database locked, retrying hour {hour}")
-                        time.sleep(0.1)  # Wait a bit before retrying
+                        time.sleep(0.1)
                         continue
                     raise
             
@@ -822,9 +800,7 @@ def get_forecast():
                         "time": target_time.strftime("%H:00"),
                         "temperature": p['temperature'],
                         "timestamp": p['target_date']
-                    })
-                
-                # Sort hourly predictions by hour
+                    })                
                 hourly.sort(key=lambda x: x['hour'])
                 
                 # Add day to forecast
@@ -839,9 +815,7 @@ def get_forecast():
                     "hourly": hourly
                 })
         
-        forecast.sort(key=lambda x: x['day_number'])
-        
-        # Get last update time
+        forecast.sort(key=lambda x: x['day_number'])        
         if all_predictions:
             last_prediction_date = max([datetime.fromisoformat(p['prediction_date']) for p in all_predictions])
             next_update = last_prediction_date + timedelta(days=1)
