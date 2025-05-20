@@ -3,6 +3,35 @@
 - SQLite3 pour le stockage des données
 - IA : Modèle LSTM bidirectionnel avec TensorFlow/Keras pour la prédiction des températures futures
 
+## Project Structure
+```
+iot-temp-watch/
+├── .githup/
+│   └── workflows/
+│       └── ci.yml
+├── backend/
+│   ├── app.py
+│   ├── models.py
+│   ├── requirements.txt
+│   ├── database/
+│   ├── model/
+│   │   └── m.keras
+│   └── services/
+│       └── weather_fetcher.py
+├── data/
+│   └── latest.js
+│   └── history.js
+├── frontend/
+│   └── ReactApp/
+│       ├── src/
+│       ├── public/
+│       ├── dist/
+│       └── package.json
+│
+├── README.md
+└── config.json
+```
+
 ## Configuration manuelle
 
 1. Créer un environnement virtuel Python :
@@ -10,7 +39,7 @@
    python -m venv venv
    ```
 
-2. Activer l’environnement virtuel :
+2. Activer l'environnement virtuel :
    - Windows :
      ```bash
      venv\Scripts\activate
@@ -29,7 +58,7 @@
    DEBUG=True
    ```
 
-5. Lancer l’application Flask :
+5. Lancer l'application Flask :
    ```bash
    cd backend
    python app.py
@@ -55,12 +84,12 @@
    npm run dev
    ```
 
-## Points de terminaison de l’API
+## Points de terminaison de l'API
 
 Le backend fournit les points de terminaison suivants :
 
 - `/data/latest` – Obtenir la dernière température avec tendance
-- `/data/history` – Obtenir l’historique des températures des dernières heures
+- `/data/history` – Obtenir l'historique des températures des dernières heures
 
 ## Projet origine
 - https://github.com/agri40/test-project-iot-watch.git

@@ -1,6 +1,5 @@
 import os
 import time
-import requests
 import threading
 import sqlite3
 import schedule
@@ -9,270 +8,26 @@ import pandas as pd
 from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
-
+from services.weather_fetcher import *
+from models import *
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-
 UPDATE_INTERVAL_SECONDS = 60
-PREDICTION_UPDATE_HOURS = 24 
-BASE_TEMP = 25.0 
-DEFAULT_LATITUDE = 30.4202
-DEFAULT_LONGITUDE = -9.5982
+PREDICTION_UPDATE_HOURS = 24
 CACHE_DURATION = 600
 last_prediction = None
 last_prediction_time = None
 
-def get_db_connection():
-    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'temperature.db')
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def generate_mock_data(clear_existing=True):
-    """Generate mock temperature data for testing"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    if clear_existing:
-        cursor.execute('DELETE FROM temperature_data')
-    
-    # Generate data for the last 7 days
-    base_time = datetime.now() - timedelta(days=7)
-    for i in range(168):
-        timestamp = (base_time + timedelta(hours=i)).isoformat()
-        temperature = BASE_TEMP + np.random.normal(0, 2)
-        cursor.execute('''
-        INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
-        VALUES (?, ?, ?, ?)
-        ''', (timestamp, temperature, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-    
-    conn.commit()
-    conn.close()
-    print("Mock data generated successfully")
-
-def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS temperature_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        temperature REAL NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL
-    )
-    ''')
-    
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS temperature_predictions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        prediction_date TEXT NOT NULL,
-        target_date TEXT NOT NULL,
-        hour INTEGER NOT NULL,
-        temperature REAL NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL,
-        UNIQUE(target_date, hour, latitude, longitude)
-    )
-    ''')
-    
-    # Create index for faster querying
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON temperature_data(timestamp)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_target_date ON temperature_predictions(target_date)')
-    
-    conn.commit()
-    
-    cursor.execute('SELECT COUNT(*) FROM temperature_data')
-    count = cursor.fetchone()[0]
-    
-    if count == 0:
-        print("Database is empty. Populating with mock data...")
-        conn.close()
-        generate_mock_data()
-    else:
-        conn.close()
-        purge_old_data()
-
-def purge_old_data():
-    """Purge data older than 10 days"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Keep data for 10 days instead of 7
-    threshold_date = (datetime.now() - timedelta(days=10)).isoformat()
-    cursor.execute('''
-    DELETE FROM temperature_data
-    WHERE timestamp < ?
-    ''', (threshold_date,))
-    
-    # Delete predictions older than 5 days
-    prediction_threshold = (datetime.now() - timedelta(days=5)).isoformat()
-    cursor.execute('''
-    DELETE FROM temperature_predictions
-    WHERE prediction_date < ?
-    ''', (prediction_threshold,))
-    
-    conn.commit()
-    conn.close()
-    print(f"Purged data older than {threshold_date}")
 
 # Initialize database
 init_db()
 
-def get_current_temperature():
-    """Get current temperature from Open-Meteo Forecast API and store it in database"""
-    try:
-        # Open-Meteo Forecast API endpoint
-        url = "https://api.open-meteo.com/v1/forecast"
-        
-        # Parameters to get current weather for Agadir
-        params = {
-            "latitude": DEFAULT_LATITUDE,
-            "longitude": DEFAULT_LONGITUDE,
-            "current_weather": True,
-            "hourly": "temperature_2m",
-            "timezone": "auto"
-        }
-        
-        # Make GET request
-        response = requests.get(url, params=params)
-        
-        if response.ok:
-            data = response.json()
-            
-            if "current_weather" in data:
-                current_temp = data["current_weather"]["temperature"]
-                timestamp = datetime.now().isoformat()
-                
-                # Store in database
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                
-                try:
-                    cursor.execute('''
-                    INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
-                    VALUES (?, ?, ?, ?)
-                    ''', (timestamp, current_temp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-                    
-                    conn.commit()
-                    print(f"[{timestamp}] Temperature stored: {current_temp:.2f}°C")
-                    
-                    # Get the last 10 readings for this hour
-                    cursor.execute('''
-                    SELECT temperature 
-                    FROM temperature_data 
-                    WHERE strftime('%Y-%m-%d %H', timestamp) = strftime('%Y-%m-%d %H', ?)
-                    AND latitude = ? AND longitude = ?
-                    ORDER BY timestamp DESC
-                    LIMIT 10
-                    ''', (timestamp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-                    
-                    recent_readings = cursor.fetchall()
-                    if recent_readings:
-                        avg_temp = sum(r['temperature'] for r in recent_readings) / len(recent_readings)
-                        print(f"Current hour average: {avg_temp:.2f}°C from {len(recent_readings)} readings")
-                    
-                except sqlite3.OperationalError as e:
-                    if "database is locked" in str(e):
-                        print("Database locked, retrying in 0.1 seconds...")
-                        time.sleep(0.1)
-                        return get_current_temperature()
-                    raise
-                finally:
-                    conn.close()
-                
-                return current_temp
-            
-        raise ValueError("Could not get current weather data")
-            
-    except Exception as e:
-        print(f"Error getting current temperature: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise
-
-def update_current_temperature():
-    """Update the database with the current temperature"""
-    try:
-        # Get current temperature
-        temperature = get_current_temperature()
-        timestamp = datetime.now().isoformat()
-        
-        # Connect to database
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # First check if we already have a record for this timestamp
-        cursor.execute('''
-        SELECT COUNT(*) FROM temperature_data 
-        WHERE timestamp = ? AND latitude = ? AND longitude = ?
-        ''', (timestamp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-        
-        count = cursor.fetchone()[0]
-        
-        if count == 0:
-            # Only insert if we don't already have this record
-            cursor.execute('''
-            INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
-            VALUES (?, ?, ?, ?)
-            ''', (timestamp, temperature, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-            conn.commit()
-            print(f"[{timestamp}] Temperature updated: {temperature:.2f}°C")
-        else:
-            print(f"[{timestamp}] Temperature already exists in database: {temperature:.2f}°C")
-        
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Error updating temperature: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-def update_all_predictions():
-    """
-    Update all predictions for the next 5 days.
-    This completely refreshes the predictions table daily.
-    """
-    try:
-        print(f"[{datetime.now().isoformat()}] Starting daily prediction update for next 5 days...")
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()        
-        cursor.execute('DELETE FROM temperature_predictions')
-        conn.commit()
-        print("Cleared existing predictions")
-        
-        prediction_count = 0
-        for day in range(1, 6):
-            try:
-                result = predict_for_day(day)
-                if "error" in result:
-                    print(f"Error predicting day {day}: {result['error']}")
-                else:
-                    prediction_count += len(result.get("predictions", []))
-                    print(f"Successfully generated predictions for day {day}")
-            except Exception as e:
-                print(f"Error processing day {day}: {str(e)}")
-                continue
-        
-        print(f"[{datetime.now().isoformat()}] Successfully generated {prediction_count} hourly predictions for next 5 days")
-        return True
-    except Exception as e:
-        print(f"Error updating predictions: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return False
-
 def run_background_services():
-    """Run continuous temperature updates and scheduled prediction updates"""
     def temperature_updater():
         """Update temperature data continuously"""
         while True:
@@ -284,7 +39,6 @@ def run_background_services():
                 time.sleep(1)
     
     def scheduler():
-        """Run scheduled tasks"""
         schedule.every().day.at("00:00").do(update_all_predictions)
         schedule.every().day.at("00:00").do(purge_old_data)
         
@@ -349,9 +103,7 @@ def get_latest_temperature():
         AND latitude = ? AND longitude = ?
         ''', (current_hour, latitude, longitude))
         
-        hour_stats = cursor.fetchone()
-        
-        # Get previous hour's average for trend
+        hour_stats = cursor.fetchone()        
         prev_hour = (datetime.now() - timedelta(hours=1)).strftime('%Y-%m-%d %H')
         cursor.execute('''
         SELECT AVG(temperature) as avg_temp
@@ -403,13 +155,10 @@ def get_temperature_history():
         ORDER BY timestamp DESC
         LIMIT 10
         ''', (latitude, longitude))
-        
         readings = cursor.fetchall()
-        
         if not readings:
-            # If no data, try to get current temperature
             get_current_temperature()
-            
+
             # Try fetching again
             cursor.execute('''
             SELECT timestamp, temperature
@@ -432,7 +181,7 @@ def get_temperature_history():
         return jsonify({
             "lastTimestamps": timestamps,
             "lastTemperatures": temperatures,
-            "updateInterval": 1,  # Update every second
+            "updateInterval": 1,
             "count": len(readings),
             "isHourlyAverage": False
         })
@@ -443,20 +192,8 @@ def get_temperature_history():
     finally:
         conn.close()
 
-def standardize_timestamp(timestamp):
-    """Convert any timestamp to YYYY-MM-DD HH:MM format"""
-    try:
-        if isinstance(timestamp, str):
-            dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-        else:
-            dt = timestamp
-        return dt.strftime('%Y-%m-%d %H:%M')  # Format without T
-    except:
-        return datetime.now().strftime('%Y-%m-%d %H:%M')
-
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
-    """Get temperature stats for the last 7 days in a format compatible with the frontend graph"""
     try:
         latitude = request.args.get('latitude', DEFAULT_LATITUDE)
         longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
@@ -501,9 +238,7 @@ def get_weekly_stats():
             grouped = df.groupby('date').agg({
                 'temperature': ['min', 'max', 'mean']
             }).reset_index()
-            
             grouped.columns = ['date', 'min_temp', 'max_temp', 'avg_temp']
-            
             dates = grouped['date'].tolist()
             min_temps = grouped['min_temp'].tolist()
             max_temps = grouped['max_temp'].tolist()
@@ -513,7 +248,7 @@ def get_weekly_stats():
             min_temps = []
             max_temps = []
             avg_temps = []
-        
+
         return jsonify({
             "dates": dates,
             "minTemps": min_temps,
@@ -597,41 +332,6 @@ def predict_temperature():
         traceback.print_exc()
         return jsonify({"error": str(e)})
 
-def load_prediction_model():
-    """Load the Keras prediction model (cached version)"""
-    
-    # Define possible model paths
-    model_dir = os.path.join(os.path.dirname(__file__), 'model')
-    possible_paths = [
-        os.path.join(model_dir, 'ml.keras'),
-        os.path.join(os.path.dirname(__file__), 'ml.keras')
-    ]
-    
-    print(f"Attempting to load model from possible paths:")
-    for path in possible_paths:
-        print(f"Checking path: {path}")
-        print(f"Path exists: {os.path.exists(path)}")
-    
-    # Try each possible path
-    for model_path in possible_paths:
-        try:
-            if os.path.exists(model_path):
-                print(f"Loading model from: {model_path}")
-                model = load_model(model_path, compile=False)
-                print(f"Successfully loaded Keras model from {model_path} (cached)")
-                return model
-            else:
-                print(f"Model file not found at: {model_path}")
-        except Exception as e:
-            print(f"Error loading model from {model_path}:")
-            print(f"Error type: {type(e).__name__}")
-            print(f"Error message: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            continue
-    
-    raise ValueError("Could not load the prediction model from any of the specified paths")
-
 def predict_for_day(day):
     """Generate temperature predictions for a specific day and store in database"""
     try:
@@ -640,7 +340,6 @@ def predict_for_day(day):
         cursor = conn.cursor()
         
         try:
-            # Calculate start time for tomorrow (day 1) or subsequent days
             tomorrow = datetime.now() + timedelta(days=1)
             start_time = tomorrow + timedelta(days=day-1)
             start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
