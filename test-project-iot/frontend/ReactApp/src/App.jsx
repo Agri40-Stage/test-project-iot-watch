@@ -5,10 +5,11 @@ import './App.css';
 import Content from './components/Content';
 
 function App() {
-
   return (
-    <div className="w-screen max-w-screen min-h-screen bg-zinc-50">
-      <Content />
+    <div className="min-h-screen w-screen bg-gradient-to-br from-zinc-50 to-zinc-100">
+      <div className="w-full h-full">
+        <Content />
+      </div>
     </div>
   )
 }

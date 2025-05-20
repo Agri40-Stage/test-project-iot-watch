@@ -106,8 +106,11 @@ const TemperaturePrediction = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 flex items-center justify-center h-full">
-        <p>Loading predictions...</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading predictions...</p>
+        </div>
       </div>
     );
   }
@@ -115,19 +118,24 @@ const TemperaturePrediction = () => {
   // Prepare chart data
   let chartData = null;
   if (!loading && !error && predictionData) {
-    // Format timestamps for display using the custom formatter
     const formattedLabels = predictionData.timestamps.map(formatDate);
 
-    // Prepare chart data
     chartData = {
       labels: formattedLabels,
       datasets: [
         {
           label: `Day ${predictionData.day} Predictions`,
           data: predictionData.predictions,
-          borderColor: 'rgb(153, 102, 255)',
-          backgroundColor: 'rgba(153, 102, 255, 0.5)',
-          tension: 0.3,
+          borderColor: '#ff811f',
+          backgroundColor: 'rgba(255, 129, 31, 0.1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#ff811f',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
         },
       ],
     };
@@ -135,16 +143,32 @@ const TemperaturePrediction = () => {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
-      },
-      title: {
-        display: true,
-        text: `Day ${predictionDay} Hourly Temperature Prediction`,
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+            weight: '500'
+          }
+        }
       },
       tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#1f2937',
+        bodyColor: '#1f2937',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        usePointStyle: true,
         callbacks: {
+          label: function(context) {
+            return `Predicted: ${context.parsed.y}°C`;
+          },
           title: (tooltipItems) => {
             const index = tooltipItems[0].dataIndex;
             return new Date(predictionData?.timestamps[index]).toLocaleString();
@@ -153,28 +177,56 @@ const TemperaturePrediction = () => {
       }
     },
     scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#6b7280',
+          font: {
+            size: 11
+          }
+        }
+      },
       y: {
+        grid: {
+          color: '#e5e7eb'
+        },
+        ticks: {
+          color: '#6b7280',
+          font: {
+            size: 11
+          },
+          callback: function(value) {
+            return value + '°C';
+          }
+        },
         title: {
           display: true,
           text: 'Temperature (°C)',
+          color: '#6b7280',
+          font: {
+            size: 12,
+            weight: '500'
+          }
         }
       }
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 h-full">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full">
       <div className="mb-4 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold">Temperature Prediction</h2>
-          <p className="text-sm text-gray-500">5-Day Hourly Temperature Forecast</p>
+          <h2 className="text-xl font-semibold text-gray-800">Temperature Prediction</h2>
+          <p className="text-sm font-medium text-gray-500">5-Day Hourly Temperature Forecast</p>
         </div>
         
         <div className="flex items-center gap-2">
-          <label htmlFor="daySelect" className="text-sm">Day to predict:</label>
+          <label htmlFor="daySelect" className="text-sm font-medium text-gray-600">Day to predict:</label>
           <select 
             id="daySelect"
-            className="border rounded p-1 text-sm"
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
             value={predictionDay}
             onChange={(e) => setPredictionDay(parseInt(e.target.value))}
           >
@@ -189,13 +241,18 @@ const TemperaturePrediction = () => {
       
       {error || !predictionData ? (
         <div className="flex flex-col items-center justify-center h-[300px]">
-          <p className="text-red-500 mb-2">{error || "No prediction data available"}</p>
-          <details className="text-xs text-gray-500 mt-2 p-2 border rounded">
-            <summary>Debug Information</summary>
-            <pre className="whitespace-pre-wrap">{debugInfo}</pre>
+          <div className="text-red-500 mb-2 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {error || "No prediction data available"}
+          </div>
+          <details className="text-xs text-gray-500 mt-2 p-2 border rounded bg-gray-50">
+            <summary className="cursor-pointer hover:text-gray-700">Debug Information</summary>
+            <pre className="whitespace-pre-wrap mt-2">{debugInfo}</pre>
           </details>
           <button 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors duration-200 shadow-sm"
             onClick={fetchPredictions}
           >
             Retry

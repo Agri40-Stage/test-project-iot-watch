@@ -4,14 +4,23 @@ import sqlite3
 import os
 import requests
 from datetime import datetime, timedelta
+import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
+from tensorflow import keras
 from tensorflow.keras.models import load_model
+import os 
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np    
+from sklearn.preprocessing import MinMaxScaler
 import threading
 import time
 import schedule
 from functools import lru_cache
+
+load_dotenv()
+app = Flask(__name__)
+CORS(app)
 
 load_dotenv()
 app = Flask(__name__)
@@ -152,7 +161,7 @@ def get_current_temperature(update_db=True):
                     cursor = conn.cursor()
                     
                     cursor.execute('''
-                    INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
+                    INSERT OR IGNORE INTO temperature_data (timestamp, temperature, latitude, longitude)
                     VALUES (?, ?, ?, ?)
                     ''', (timestamp, current_temp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
                     
@@ -763,6 +772,6 @@ def serve(path):
     else:
         return send_from_directory(static_dir, 'index.html')
 
-if __name__ == '__main__':
-    run_background_services()    
-    app.run(debug=True, port=int(os.environ.get('PORT', 5000)))
+if __name__ == "__main__":
+    run_background_services()
+    app.run(host="0.0.0.0", port=5000)
