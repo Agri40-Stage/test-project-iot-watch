@@ -18,6 +18,7 @@
 
 3. Installer les dépendances Python :
    ```bash
+   cd backend
    pip install -r requirements.txt
    ```
 
@@ -28,20 +29,17 @@
    DEBUG=True
    ```
 
-5. Générer des données factices :
+5. Lancer l’application Flask :
    ```bash
-   python generate_mock_data.py
-   ```
-
-6. Lancer l’application Flask :
-   ```bash
+   cd backend
    python app.py
    ```
 
 ### Configuration du Frontend
 
-1. Depuis le répertoire racine, installer les dépendances :
+1. Depuis le répertoire frontend, installer les dépendances :
    ```bash
+   cd ReactApp
    npm install
    ```
 
@@ -53,6 +51,7 @@
 
 3. Lancer le serveur de développement :
    ```bash
+   cd frontend/ReactApp
    npm run dev
    ```
 
@@ -60,8 +59,8 @@
 
 Le backend fournit les points de terminaison suivants :
 
-- `/api/latest` – Obtenir la dernière température avec tendance
-- `/api/history` – Obtenir l’historique des températures des dernières heures
+- `/data/latest` – Obtenir la dernière température avec tendance
+- `/data/history` – Obtenir l’historique des températures des dernières heures
 
 ## Projet origine
 - https://github.com/agri40/test-project-iot-watch.git
