@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 /* Components */
-import TemperatureCrad from "./TemperatureCrad";
-import TemperatureChart from "./TemperatureChart";
+import TemperatureCrad from "../components/TemperatureCrad";
+import TemperatureChart from "../components/TemperatureChart";
+import Header from "../components/Header";
 
 /* API */
 import fetchLatestTemperature from "../api/latest";
@@ -82,6 +83,7 @@ const Content = () => {
 
 
   return (
+    
     <div className="flex flex-col gap-8 py-12 px-6">
       <div className="w-full flex flex-col gap-2 text-left">
         <h1 className="font-bold text-3xl">
