@@ -33,9 +33,21 @@ iot-temp-watch/
 ```
 
 ## Configuration manuelle
-2. Télécharger Python 3.10 depuis le site officiel :
+
+1. Télécharger Python 3.10 depuis le site officiel :
      https://www.python.org/downloads/release/python-3109/
- ou bien Utiliser conda pour créer un environnement compatible :
+ 
+ Créer un environnement virtuel Python :
+   ```bash
+   python3.10 -m venv venv
+   ```
+Activer l'environnement virtuel :
+   - Windows :
+     ```bash
+     venv\Scripts\activate
+     ```
+
+2. ou bien Utiliser conda pour créer un environnement compatible :
  Windows PowerShell
  ```bash
   wget "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe" -outfile ".\miniconda.exe"
@@ -46,18 +58,6 @@ iot-temp-watch/
  conda create -n iot-env python=3.10
  conda activate iot-env
  ```
- 
-1. Créer un environnement virtuel Python :
-   ```bash
-   python3.10 -m venv venv
-   ```
-
-2. Activer l'environnement virtuel :
-   - Windows :
-     ```bash
-     venv\Scripts\activate
-     ```
-
 3. Installer les dépendances Python :
    ```bash
    cd backend
