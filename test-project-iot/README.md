@@ -39,12 +39,12 @@ iot-temp-watch/
  
  Créer un environnement virtuel Python :
    ```bash
-   python3.10 -m venv venv
+   python3.10 -m venv iot-env
    ```
 Activer l'environnement virtuel :
    - Windows :
      ```bash
-     venv\Scripts\activate
+     iot-env\Scripts\activate
      ```
 
 2. ou bien Utiliser conda pour créer un environnement compatible :
