@@ -28,8 +28,7 @@ iot-temp-watch/
 │       ├── dist/
 │       └── package.json
 │
-├── README.md
-└── config.json
+└── README.md
 ```
 
 ## Configuration manuelle
