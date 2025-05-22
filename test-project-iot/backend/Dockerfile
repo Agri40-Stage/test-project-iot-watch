@@ -21,3 +21,9 @@ RUN . venv/bin/activate && pip install --upgrade pip && pip install -r requireme
 
 # Make sure the virtual environment is used by default
 ENV PATH="/app/venv/bin:$PATH"
+
+# Expose default Flask port 
+EXPOSE 5000
+
+# Start the app once the conainer is running 
+CMD ["venv/bin/python", "app.py"]
