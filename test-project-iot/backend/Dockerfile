@@ -14,3 +14,10 @@ COPY . /app
 
 # Create a virtual environment
 RUN python -m venv venv
+
+
+# Activate virtual env and install dependencies
+RUN . venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
+
+# Make sure the virtual environment is used by default
+ENV PATH="/app/venv/bin:$PATH"
