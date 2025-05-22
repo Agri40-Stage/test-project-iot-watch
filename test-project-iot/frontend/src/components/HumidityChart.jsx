@@ -1,25 +1,46 @@
-import React from "react";
-
-/* Chart Js */
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement } from "chart.js";
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement);
+import React, { useEffect, useState } from "react";
+import { Chart as ChartJS, ArcElement, Tooltip, Filler, Legend, CategoryScale, LinearScale, PointElement, LineElement } from "chart.js";
+ChartJS.register(ArcElement, Tooltip, Legend, Filler, CategoryScale, LinearScale, PointElement, LineElement);
 import { Line } from "react-chartjs-2";
 
-/*data to practice with the chart */
-import lineChart from "../../data/data"
+const HumidityChart = () => {
+    const [humidityData, setHumidityData] = useState(null);
 
+    useEffect(() => {
+        fetch("#")
+            .then(response => response.json())
+            .then(data => {
 
-const HumidityChart = ()=>{
-    const options = {};
-    const data =lineChart;
-return(
-    <div className="w-1/2 h-1/2">
-    <Line options={options} data={data} />
+                if (data.hourly && data.hourly.relative_humidity_2m) { 
+                    const humidity = data.hourly.relative_humidity_2m.slice(0, 7);
+                    const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+                    setHumidityData({
+                        labels: labels,
+                        datasets: [{
+                            label: "Humidity Agadir",
+                            data: humidity,
+                            borderColor: "#36A2EB",
+                            backgroundColor: "rgba(54, 162, 235, 0.2)",
+                            fill: true,
+                            borderWidth: 2,
+                            tension: 0.4,
+                        }]
+                    });
+                } else {
+                    console.error("Humidity data is missing or undefined:", data);
+                }
+            })
+            .catch(error => console.error("Error fetching humidity data:", error));
+    }, []);
 
-    </div>
+    const options = {}; 
 
-)
-}
+    return ( 
+        <div className="w-1/2 h-1/2">
+            {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading...</p>}
+        </div>
+    );
+};
 
 export default HumidityChart;
