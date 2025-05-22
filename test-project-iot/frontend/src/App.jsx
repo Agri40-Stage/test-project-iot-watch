@@ -4,7 +4,7 @@ import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 
 /*Pages */
 import Temperature from "./pages/Temperature"
-import HumidityChart from './components/HumidityChart';
+import Humidity from './pages/Humidity';
 
 
 function App() {
@@ -14,7 +14,7 @@ function App() {
     
       <Routes>
         <Route path="/" element={<Temperature />} />
-        <Route path="/humidity" element={<HumidityChart />} />
+        <Route path="/humidity" element={<Humidity />} />
       </Routes>
     
     
