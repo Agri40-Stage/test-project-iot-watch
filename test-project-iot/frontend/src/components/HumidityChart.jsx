@@ -7,7 +7,7 @@ const HumidityChart = () => {
     const [humidityData, setHumidityData] = useState(null);
 
     useEffect(() => {
-        fetch("#")
+        fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&hourly=relative_humidity_2m")
             .then(response => response.json())
             .then(data => {
 
