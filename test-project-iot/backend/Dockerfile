@@ -9,3 +9,8 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory inside the container to /app
 WORKDIR /app
 
+# Copy everything from the current folder (backend/) into the image
+COPY . /app
+
+# Create a virtual environment
+RUN python -m venv venv
