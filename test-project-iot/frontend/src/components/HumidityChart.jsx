@@ -7,16 +7,25 @@ const HumidityChart = () => {
     const [humidityData, setHumidityData] = useState(null);
 
     useEffect(() => {
-        fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&hourly=relative_humidity_2m")
+        // fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&hourly=relative_humidity_2m")
+        fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&daily=relative_humidity_2m_max&timezone=auto")
             .then(response => response.json())
             .then(data => {
 
-                if (data.hourly && data.hourly.relative_humidity_2m) { 
-                    const humidity = data.hourly.relative_humidity_2m.slice(0, 7);
-                    const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                console.log("here is the data structure: " , data.daily.time)
+
+                if (data.daily && data.daily.time && data.daily.relative_humidity_2m_max) { 
+                    //this variable give us the 7 past humidity values in the past 7 days
+                    const humidity = data.daily.relative_humidity_2m_max.slice(0, 7);
+                    //this variable will give us the 7 past days related to the 7 past humidity values 
+                    const weekDays = data.daily.time.slice(0,7);
+                    console.log(weekDays)
 
                     setHumidityData({
-                        labels: labels,
+                        labels: weekDays.map(day => {
+                    const date = new Date(day);
+                    return date.toLocaleDateString("en-US", { weekday: "long" })
+                        }),
                         datasets: [{
                             label: "Humidity Agadir",
                             data: humidity,
@@ -28,7 +37,7 @@ const HumidityChart = () => {
                         }]
                     });
                 } else {
-                    console.error("Humidity data is missing or undefined:", data);
+                    console.error("the data is not fetching properly or mayber undefined:", data);
                 }
             })
             .catch(error => console.error("Error fetching humidity data:", error));
@@ -37,7 +46,7 @@ const HumidityChart = () => {
     const options = {}; 
 
     return ( 
-        <div className="w-1/2 h-1/2">
+        <div className="w-1/2 h-full">
             {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading...</p>}
         </div>
     );

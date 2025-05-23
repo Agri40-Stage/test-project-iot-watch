@@ -13,7 +13,7 @@ function App() {
 
     
       <Routes>
-        <Route path="/" element={<Temperature />} />
+        <Route path="/temperature" element={<Temperature />} />
         <Route path="/humidity" element={<Humidity />} />
       </Routes>
     

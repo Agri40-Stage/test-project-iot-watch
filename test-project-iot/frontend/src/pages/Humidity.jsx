@@ -8,7 +8,11 @@ function Humidity(){
     return(
         <div className="w-screen max-w-screen min-h-screen bg-zinc-50">
       <Header />
-      <HumidityChart />
+      <div className='flex '>
+
+      <HumidityChart/>
+
+      </div>
     </div>
     )
 }
