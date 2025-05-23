@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 function Header() {
     return (
         <div className='flex flex-row justify-between items-center px-8'>
-            <div className=' flex-1 flex items-center'>
+            <div className=' flex-1 flex items-center '>
                 <img className='h-20' src="https://th.bing.com/th/id/OIP.2PDIejApjWb5yA0ZqaFiJgHaHa?rs=1&pid=ImgDetMain" alt="logo" />
             </div>
             <ul className='flex flex-row space-x-4  flex-1 justify-center items-center'>

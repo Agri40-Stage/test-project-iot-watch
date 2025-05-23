@@ -47,8 +47,10 @@ const HumidityChart = () => {
     const options = {}; 
 
     return ( 
-        <div className="w-1/2 h-full">
-            {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading...</p>}
+        <div className="flex justify-center items-center min-h-1/2 w-4xl">
+            <div className="w-full h-full">
+                {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading...</p>}
+            </div>
         </div>
     );
 };
