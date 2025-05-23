@@ -7,12 +7,13 @@ const HumidityChart = () => {
     const [humidityData, setHumidityData] = useState(null);
 
     useEffect(() => {
+        //this api url gives the humidity data (agadir) the the current day but in an HOURLY base
         // fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&hourly=relative_humidity_2m")
+
+        //this api url gives the humidity data (agadir) the the current day but in an DAILY base
         fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&daily=relative_humidity_2m_max&timezone=auto")
             .then(response => response.json())
             .then(data => {
-
-                console.log("here is the data structure: " , data.daily.time)
 
                 if (data.daily && data.daily.time && data.daily.relative_humidity_2m_max) { 
                     //this variable give us the 7 past humidity values in the past 7 days
@@ -37,7 +38,7 @@ const HumidityChart = () => {
                         }]
                     });
                 } else {
-                    console.error("the data is not fetching properly or mayber undefined:", data);
+                    alert("The data is not fetching properly or may be undefined:\n" );
                 }
             })
             .catch(error => console.error("Error fetching humidity data:", error));
