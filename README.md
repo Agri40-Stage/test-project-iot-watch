@@ -81,4 +81,6 @@ iot-temp-watch/
 | Code quality      | ★★★★☆     |
 | Documentation     | ★★★★☆     |
 | Bonus features    | ★★☆☆☆     |
+| IoT               | ★★★★☆     |
+
 
