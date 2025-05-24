@@ -11,7 +11,7 @@ const HumidityChart = () => {
         // fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&hourly=relative_humidity_2m")
 
         //this api url gives the humidity data (agadir) the the current day but in an DAILY base
-        fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&daily=relative_humidity_2m_max&timezone=auto")
+        fetch("https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&daily=relative_humidity_2m_max&timezone=auto&past_days=7")
             .then(response => response.json())
             .then(data => {
 
