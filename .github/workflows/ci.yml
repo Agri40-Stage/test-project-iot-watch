@@ -30,12 +30,6 @@ jobs:
           mkdir -p database
           touch database/temperature.db
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
       - name: Install frontend dependencies
         run: |
           cd frontend
