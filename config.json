@@ -1,0 +1,5 @@
+{
+  "port": 5000,
+  "database_path": "database/temperature.db",
+  "debug": true
+} 
