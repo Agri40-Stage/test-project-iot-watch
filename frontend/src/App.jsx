@@ -1,24 +1,26 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-import './components/components.css';
+import './App.css';
+import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
+
+/*Pages */
+import Temperature from "./pages/Temperature"
+import Humidity from './pages/Humidity';
+import Home from './pages/Home';
+
 
 function App() {
+
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
-  );
+
+    
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/temperature" element={<Temperature />} />
+        <Route path="/humidity" element={<Humidity />} />
+      </Routes>
+    
+    
+  )
 }
 
-export default App; 
+export default App;
