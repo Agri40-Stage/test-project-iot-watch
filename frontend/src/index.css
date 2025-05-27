@@ -57,3 +57,17 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+body.dark {
+  background-color: #18181b;
+  color: #f1f5f9;
+}
+
+body.dark .bg-white {
+  background-color: #27272a !important;
+}
+
+body.dark .text-gray-400,
+body.dark .text-gray-500 {
+  color: #a1a1aa !important;
+}
