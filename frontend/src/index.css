@@ -67,6 +67,10 @@ body.dark .bg-white {
   background-color: #27272a !important;
 }
 
+body.dark .bg-zinc-50 {
+  background-color: #18181b !important;
+}
+
 body.dark .text-gray-400,
 body.dark .text-gray-500 {
   color: #a1a1aa !important;
