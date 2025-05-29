@@ -191,7 +191,37 @@ def get_temperature_history():
         return jsonify({"error": str(e)})
     finally:
         conn.close()
+@app.route('/api/weekly-charts', methods=['GET'])
+def get_weekly_charts():
+    """Generate and return paths to weekly temperature charts"""
+    try:
+        from services.chart_generator import generate_weekly_chart
+        result = generate_weekly_chart()
+        
+        if 'error' in result:
+            return jsonify({"error": result['error']}), 500
+            
+        return jsonify(result)
+        
+    except ImportError as e:
+        print(f"Chart generator import error: {str(e)}")
+        return jsonify({"error": "Failed to import chart generator"}), 500
+        
+    except Exception as e:
+        print(f"Error generating weekly charts: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
+# Route pour servir les fichiers statiques
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Serve static files from the static directory"""
+    try:
+        return send_from_directory('static', path)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+    except Exception as e:
+        print(f"Error serving static file: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
     try:
@@ -250,10 +280,12 @@ def get_weekly_stats():
             avg_temps = []
 
         return jsonify({
-            "dates": dates,
-            "minTemps": min_temps,
-            "maxTemps": max_temps,
-            "avgTemps": avg_temps
+            "days": dates,
+            "min_temps": min_temps,
+            "max_temps": max_temps,
+            "avg_temps": avg_temps,
+            "weekly_avg": float(np.mean(avg_temps)) if avg_temps else None,
+            "temp_std_dev": float(np.std(avg_temps)) if avg_temps else None
         })
         
     except Exception as e:
@@ -262,10 +294,12 @@ def get_weekly_stats():
         return jsonify({
             "success": False,
             "error": str(e),
-            "dates": [],
-            "minTemps": [],
-            "maxTemps": [],
-            "avgTemps": []
+            "days": [],
+            "min_temps": [],
+            "max_temps": [],
+            "avg_temps": [],
+            "weekly_avg": None,
+            "temp_std_dev": None
         })
 
 @app.route('/api/predict', methods=['GET'])
