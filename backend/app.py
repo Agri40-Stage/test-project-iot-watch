@@ -12,7 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
-
+from services.chart_data_service import get_weekly_chart_data
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
@@ -191,25 +191,19 @@ def get_temperature_history():
         return jsonify({"error": str(e)})
     finally:
         conn.close()
-@app.route('/api/weekly-charts', methods=['GET'])
-def get_weekly_charts():
-    """Generate and return paths to weekly temperature charts"""
+@app.route('/api/weekly-chart-data', methods=['GET'])
+def get_weekly_chart_data_endpoint():
+    """Endpoint to provide weekly temperature data for Chart.js."""
     try:
-        from services.chart_generator import generate_weekly_chart
-        result = generate_weekly_chart()
-        
-        if 'error' in result:
-            return jsonify({"error": result['error']}), 500
-            
-        return jsonify(result)
-        
-    except ImportError as e:
-        print(f"Chart generator import error: {str(e)}")
-        return jsonify({"error": "Failed to import chart generator"}), 500
-        
+        data = get_weekly_chart_data()
+        if 'error' in data:
+            return jsonify({"error": data['error']}), 500
+        return jsonify(data)
     except Exception as e:
-        print(f"Error generating weekly charts: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        print(f"Error getting weekly chart data: {str(e)}")
+        return jsonify({"error": "Failed to retrieve chart data"}), 500
 
 # Route pour servir les fichiers statiques
 @app.route('/static/<path:path>')
