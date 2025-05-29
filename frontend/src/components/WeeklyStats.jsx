@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { fetchWeeklyStats, fetchWeeklyCharts } from '../api/weekly';
+import { fetchWeeklyStats, fetchWeeklyChartData } from '../api/weekly';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Title } from 'chart.js';
+import { MatrixController, MatrixElement } from 'chartjs-chart-matrix';
 import { Chart } from 'react-chartjs-2';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Title);
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  Title,
+  MatrixController,
+  MatrixElement
+);
 
 const WeeklyStats = () => {
+    const [weeklyChartData, setWeeklyChartData] = useState(null);
     const [weeklyStats, setWeeklyStats] = useState(null);
     const [chartPaths, setChartPaths] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -67,6 +81,123 @@ const WeeklyStats = () => {
         }
     };
 
+    // Configuration for the heatmap
+    const heatmapOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title() {
+                        return '';
+                    },
+                    label(context) {
+                        const v = context.dataset.data[context.dataIndex];
+                        return [`Date: ${v.y}`, `Hour: ${v.x}h`, `Temperature: ${v.v.toFixed(1)}°C`];
+                    }
+                }
+            },
+            legend: {
+                display: false
+            },
+            title: {
+                display: true,
+                text: 'Hourly Temperature Heatmap (Last 7 Days)',
+                font: {
+                    size: 16
+                }
+            }
+        },
+        scales: {
+            y: {
+                type: 'category',
+                offset: true,
+                grid: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Date',
+                    font: {
+                        weight: 'bold'
+                    }
+                }
+            },
+            x: {
+                type: 'category',
+                offset: true,
+                grid: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Hour',
+                    font: {
+                        weight: 'bold'
+                    }
+                }
+            }
+        }
+    };
+
+    
+    const trendOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            tooltip: {
+                usePointStyle: true
+            },
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    boxWidth: 10
+                }
+            },
+            title: {
+                display: true,
+                text: 'Daily Temperature Trends',
+                font: {
+                    size: 16
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                title: {
+                    display: true,
+                    text: 'Temperature (°C)',
+                    font: {
+                        weight: 'bold'
+                    }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.1)',
+                    lineWidth: 0.5
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Date',
+                    font: {
+                        weight: 'bold'
+                    }
+                },
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        }
+    };
+
     const getWeeklyStats = async () => {
         try {
             setLoading(true);
@@ -119,23 +250,23 @@ const WeeklyStats = () => {
         }
     };
 
-    const getWeeklyCharts = async () => {
+    const getWeeklyChartData = async () => {
         try {
-            const data = await fetchWeeklyCharts();
-            if (data && data.heatmap_path && data.trend_chart_path) {
-                setChartPaths(data);
+            const data = await fetchWeeklyChartData();
+            if (data && !data.error) {
+                setWeeklyChartData(data);
             }
         } catch (err) {
-            console.error("Error getting weekly charts: ", err);
+            console.error("Error getting weekly chart data: ", err);
         }
     };
 
     useEffect(() => {
         getWeeklyStats();
-        getWeeklyCharts();
+        getWeeklyChartData();
         const interval = setInterval(() => {
             getWeeklyStats();
-            getWeeklyCharts();
+            getWeeklyChartData();
         }, 3600000);
         return () => clearInterval(interval);
     }, []);
@@ -218,34 +349,130 @@ const WeeklyStats = () => {
                 </div>
             )}
 
-            {chartPaths && !loading && (
+            {weeklyChartData && !loading && (
                 <div className="flex flex-col gap-6 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
                     <h2 className="text-xl font-medium">Advanced Visualizations</h2>
                     
                     <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                         <div className="flex flex-col gap-2">
                             <h3 className="text-lg font-medium">Temperature Heatmap</h3>
-                            <img
-                                src={`${import.meta.env.VITE_BACKEND_URL}${chartPaths.heatmap_path}`}
-                                alt="Weekly temperature heatmap"
-                                className="w-full rounded-lg border border-gray-200"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = '/placeholder-image.png';
-                                }}
-                            />
+                            <div className="h-80 w-full rounded-lg border border-gray-200 p-4">
+                                {weeklyChartData.heatmap_data && weeklyChartData.heatmap_data.length > 0 ? (
+                                    <Chart 
+                                        type="matrix"
+                                        data={{
+                                            datasets: [{
+                                                label: 'Hourly temperature',
+                                                data: weeklyChartData.heatmap_data,
+                                                backgroundColor(context) {
+                                                    const value = context.dataset.data[context.dataIndex].v;
+                                                    const alpha = 1;
+                                                    
+                                                    // Color scale similar to matplotlib's coolwarm
+                                                    if (value < 15) {
+                                                        // Blue (cold) for low values
+                                                        const intensity = Math.max(0, (value - 10) / 5);
+                                                        return `rgba(${59 + 196 * intensity}, ${76 + 179 * intensity}, ${192}, ${alpha})`;
+                                                    } else if (value > 25) {
+                                                        // Red (hot) for high values
+                                                        const intensity = Math.min(1, (value - 25) / 5);
+                                                        return `rgba(${215 + 40 * intensity}, ${48 + 40 * intensity}, ${39}, ${alpha})`;
+                                                    } else {
+                                                        // White/neutral for medium values
+                                                        const intensity = (value - 15) / 10;
+                                                        return `rgba(${255 - 40 * intensity}, ${255 - 207 * intensity}, ${255 - 216 * intensity}, ${alpha})`;
+                                                    }
+                                                },
+                                                borderColor: 'white',
+                                                borderWidth: 1,
+                                                width: ({ chart }) => (chart.chartArea || {}).width / 24 - 1,
+                                                height: ({ chart }) => (chart.chartArea || {}).height / weeklyChartData.days.length - 1
+                                            }]
+                                        }}
+                                        options={{
+                                            ...heatmapOptions,
+                                            scales: {
+                                                ...heatmapOptions.scales,
+                                                y: {
+                                                    ...heatmapOptions.scales.y,
+                                                    labels: weeklyChartData.days
+                                                },
+                                                x: {
+                                                    ...heatmapOptions.scales.x,
+                                                    labels: weeklyChartData.hours
+                                                }
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center">
+                                        <p className="text-gray-500">No heatmap data available</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="flex flex-col gap-2">
                             <h3 className="text-lg font-medium">Daily Trends</h3>
-                            <img
-                                src={`${import.meta.env.VITE_BACKEND_URL}${chartPaths.trend_chart_path}`}
-                                alt="Weekly temperature trends"
-                                className="w-full rounded-lg border border-gray-200"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = '/placeholder-image.png';
-                                }}
-                            />
+                            <div className="h-80 w-full rounded-lg border border-gray-200 p-4">
+                                {weeklyChartData.days && weeklyChartData.trend_data ? (
+                                    <Chart 
+                                        type="line"
+                                        data={{
+                                            labels: weeklyChartData.days,
+                                            datasets: [
+                                                {
+                                                    label: 'Average',
+                                                    data: weeklyChartData.trend_data.avg,
+                                                    borderColor: '#ff811f',
+                                                    backgroundColor: 'rgba(255, 129, 31, 0.1)',
+                                                    borderWidth: 2.5,
+                                                    pointBackgroundColor: 'white',
+                                                    pointBorderColor: '#ff811f',
+                                                    pointRadius: 5,
+                                                    pointHoverRadius: 7,
+                                                    tension: 0.3
+                                                },
+                                                {
+                                                    label: 'Minimum',
+                                                    data: weeklyChartData.trend_data.min,
+                                                    borderColor: '#1f77b4',
+                                                    borderWidth: 1.5,
+                                                    borderDash: [5, 5],
+                                                    pointStyle: 'rect',
+                                                    pointRadius: 4,
+                                                    pointHoverRadius: 6,
+                                                    tension: 0.3
+                                                },
+                                                {
+                                                    label: 'Maximum',
+                                                    data: weeklyChartData.trend_data.max,
+                                                    borderColor: 'crimson',
+                                                    borderWidth: 1.5,
+                                                    borderDash: [5, 5],
+                                                    pointStyle: 'rect',
+                                                    pointRadius: 4,
+                                                    pointHoverRadius: 6,
+                                                    tension: 0.3
+                                                },
+                                                {
+                                                    label: 'Range',
+                                                    data: weeklyChartData.trend_data.min,
+                                                    borderColor: 'transparent',
+                                                    backgroundColor: 'rgba(128, 128, 128, 0.1)',
+                                                    pointRadius: 0,
+                                                    pointHoverRadius: 0,
+                                                    fill: '+1', // Fill up to the next dataset (max)
+                                                }
+                                            ]
+                                        }}
+                                        options={trendOptions}
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center">
+                                        <p className="text-gray-500">No trend data available</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

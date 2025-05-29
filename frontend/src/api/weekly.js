@@ -17,22 +17,23 @@ const fetchWeeklyStats = async () => {
     }
 };
 
-const fetchWeeklyCharts = async () => {
+const fetchWeeklyChartData = async () => {
     try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/weekly-charts`);
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/weekly-chart-data`);
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             const errorMessage = errorData.error || response.statusText;
-            console.error("Error fetching weekly charts:", errorMessage);
+            console.error("Error fetching weekly chart data:", errorMessage);
             throw new Error(errorMessage);
         }
 
         return await response.json();
     } catch (error) {
-        console.error("Network error fetching weekly charts:", error);
-        throw new Error("Failed to fetch weekly charts");
+        console.error("Network error fetching weekly chart data:", error);
+        throw new Error("Failed to fetch weekly chart data");
     }
 };
 
-export { fetchWeeklyStats, fetchWeeklyCharts };
+// Et modifier l'export pour inclure la nouvelle fonction
+export { fetchWeeklyStats, fetchWeeklyChartData };
