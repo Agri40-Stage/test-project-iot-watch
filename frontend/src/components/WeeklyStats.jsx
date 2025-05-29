@@ -1,248 +1,257 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
-import { API_BASE_URL } from '../config';
+import { fetchWeeklyStats, fetchWeeklyCharts } from '../api/weekly';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Title } from 'chart.js';
+import { Chart } from 'react-chartjs-2';
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Title);
 
 const WeeklyStats = () => {
-  const [weeklyData, setWeeklyData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [debugInfo, setDebugInfo] = useState("");
+    const [weeklyStats, setWeeklyStats] = useState(null);
+    const [chartPaths, setChartPaths] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [chartData, setChartData] = useState({
+        labels: [],
+        datasets: []
+    });
 
-  const fetchWeeklyStats = async () => {
-    try {
-      setLoading(true);
-      console.log(`Fetching weekly stats from: ${API_BASE_URL}/api/weekly-stats`);
-      setDebugInfo(`Attempting to fetch from: ${API_BASE_URL}/api/weekly-stats`);
-      
-      const response = await fetch(`${API_BASE_URL}/api/weekly-stats`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log("Weekly stats data received:", data);
-      setDebugInfo(prev => prev + "\nData received successfully");
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      setWeeklyData(data);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching weekly stats:", err);
-      setError(`Failed to load weekly statistics: ${err.message}`);
-      setDebugInfo(prev => prev + `\nError: ${err.message}`);
-      
-      // Try to fetch from backup API if available
-      try {
-        setDebugInfo(prev => prev + "\nAttempting fallback fetch...");
-        // Implement fallback logic here if needed
-      } catch (fallbackErr) {
-        console.error("Fallback fetch also failed:", fallbackErr);
-        setDebugInfo(prev => prev + `\nFallback also failed: ${fallbackErr.message}`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    boxWidth: 10
+                }
+            },
+            title: {
+                display: true,
+                text: 'Weekly Temperature Trends',
+                font: {
+                    size: 18
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.raw} °C`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Day'
+                },
+                grid: {
+                    display: false
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Temperature (°C)'
+                },
+                grid: {
+                    color: '#e5e7eb'
+                }
+            }
+        }
+    };
 
-  useEffect(() => {
-    fetchWeeklyStats();
+    const getWeeklyStats = async () => {
+        try {
+            setLoading(true);
+            const data = await fetchWeeklyStats();
+            if (!data || !data.days || !data.avg_temps || !data.min_temps || !data.max_temps) {
+                throw new Error("Incomplete data received from server");
+            }
+            setWeeklyStats(data);
+
+            setChartData({
+                labels: data.days,
+                datasets: [
+                    {
+                        label: 'Average temperature',
+                        data: data.avg_temps,
+                        borderColor: '#fb923c',
+                        backgroundColor: 'rgba(251, 146, 60, 0.2)',
+                        type: 'line',
+                        tension: 0.4,
+                        pointBackgroundColor: '#fb923c',
+                        pointBorderColor: '#fb923c',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Minimum temperature',
+                        data: data.min_temps,
+                        backgroundColor: '#60a5fa',
+                        borderRadius: 5,
+                        barThickness: 20,
+                        type: 'bar',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Maximum temperature',
+                        data: data.max_temps,
+                        backgroundColor: '#f87171',
+                        borderRadius: 5,
+                        barThickness: 20,
+                        type: 'bar',
+                        yAxisID: 'y'
+                    }
+                ]
+            });
+
+            setError(null);
+        } catch (err) {
+            setError(err.message || "Failed to fetch weekly statistics");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getWeeklyCharts = async () => {
+        try {
+            const data = await fetchWeeklyCharts();
+            if (data && data.heatmap_path && data.trend_chart_path) {
+                setChartPaths(data);
+            }
+        } catch (err) {
+            console.error("Error getting weekly charts: ", err);
+        }
+    };
+
+    useEffect(() => {
+        getWeeklyStats();
+        getWeeklyCharts();
+        const interval = setInterval(() => {
+            getWeeklyStats();
+            getWeeklyCharts();
+        }, 3600000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const hasValidStatsData = weeklyStats && 
+                            weeklyStats.days && 
+                            weeklyStats.avg_temps && 
+                            weeklyStats.min_temps && 
+                            weeklyStats.max_temps &&
+                            weeklyStats.weekly_avg !== undefined &&
+                            weeklyStats.temp_std_dev !== undefined;
+
+    const minTempValue = hasValidStatsData && weeklyStats.min_temps.length > 0 
+                        ? Math.min(...weeklyStats.min_temps) 
+                        : 'N/A';
     
-    // Refresh data every minute
-    const interval = setInterval(() => {
-      fetchWeeklyStats();
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    const maxTempValue = hasValidStatsData && weeklyStats.max_temps.length > 0 
+                        ? Math.max(...weeklyStats.max_temps) 
+                        : 'N/A';
 
-  if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Loading weekly statistics...</p>
+        <div className="flex flex-col gap-8 py-12 px-6">
+            <div className="w-full flex flex-col gap-2 text-left">
+                <h1 className="font-bold text-3xl">
+                    Weekly Temperature Statistics
+                </h1>
+                <p className="text-sm font-light text-gray-400">
+                    Temperature trend analysis for the last 7 days
+                </p>
+            </div>
+
+            {loading && (
+                <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+                </div>
+            )}
+
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <p>{error}</p>
+                </div>
+            )}
+
+            {!loading && !error && !hasValidStatsData && (
+                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                    <p>No valid data available to display statistics</p>
+                </div>
+            )}
+
+            {hasValidStatsData && (
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                    <div className="flex flex-col gap-6 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
+                        <h2 className="text-xl font-medium">Weekly Summary</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col">
+                                <span className="text-sm text-gray-500">Average temperature</span>
+                                <span className="text-2xl font-bold">{weeklyStats.weekly_avg.toFixed(1)}°C</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm text-gray-500">Standard deviation</span>
+                                <span className="text-2xl font-bold">{weeklyStats.temp_std_dev.toFixed(1)}°C</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm text-gray-500">Minimum temperature</span>
+                                <span className="text-2xl font-bold">{minTempValue}°C</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm text-gray-500">Maximum temperature</span>
+                                <span className="text-2xl font-bold">{maxTempValue}°C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
+                        <h2 className="text-xl font-medium">Temperature Trends</h2>
+                        <div className="h-80">
+                            <Chart type="bar" data={chartData} options={chartOptions} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {chartPaths && !loading && (
+                <div className="flex flex-col gap-6 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
+                    <h2 className="text-xl font-medium">Advanced Visualizations</h2>
+                    
+                    <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <h3 className="text-lg font-medium">Temperature Heatmap</h3>
+                            <img
+                                src={`${import.meta.env.VITE_BACKEND_URL}${chartPaths.heatmap_path}`}
+                                alt="Weekly temperature heatmap"
+                                className="w-full rounded-lg border border-gray-200"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = '/placeholder-image.png';
+                                }}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <h3 className="text-lg font-medium">Daily Trends</h3>
+                            <img
+                                src={`${import.meta.env.VITE_BACKEND_URL}${chartPaths.trend_chart_path}`}
+                                alt="Weekly temperature trends"
+                                className="w-full rounded-lg border border-gray-200"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = '/placeholder-image.png';
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
     );
-  }
-
-  if (error || !weeklyData) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full flex flex-col items-center justify-center">
-        <div className="text-red-500 mb-2 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {error || "No data available"}
-        </div>
-        <details className="text-xs text-gray-500 mt-2 p-2 border rounded bg-gray-50">
-          <summary className="cursor-pointer hover:text-gray-700">Debug Information</summary>
-          <pre className="whitespace-pre-wrap mt-2">{debugInfo}</pre>
-        </details>
-        <button 
-          className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors duration-200 shadow-sm"
-          onClick={fetchWeeklyStats}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  // Prepare chart data
-  const chartData = {
-    labels: weeklyData.dates,
-    datasets: [
-      {
-        type: 'line',
-        label: 'Average',
-        data: weeklyData.avgTemps,
-        borderColor: '#ff811f',
-        backgroundColor: 'rgba(255, 129, 31, 0.1)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#ff811f',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        yAxisID: 'y',
-      },
-      {
-        type: 'bar',
-        label: 'Min',
-        data: weeklyData.minTemps,
-        backgroundColor: 'rgba(53, 162, 235, 0.7)',
-        borderRadius: 4,
-        borderWidth: 0,
-        yAxisID: 'y',
-      },
-      {
-        type: 'bar',
-        label: 'Max',
-        data: weeklyData.maxTemps,
-        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-        borderRadius: 4,
-        borderWidth: 0,
-        yAxisID: 'y',
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    stacked: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          usePointStyle: true,
-          padding: 20,
-          font: {
-            size: 12,
-            weight: '500'
-          }
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#1f2937',
-        bodyColor: '#1f2937',
-        borderColor: '#e5e7eb',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: true,
-        usePointStyle: true,
-        callbacks: {
-          label: function(context) {
-            return `${context.dataset.label}: ${context.parsed.y}°C`;
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          color: '#6b7280',
-          font: {
-            size: 11
-          }
-        }
-      },
-      y: {
-        grid: {
-          color: '#e5e7eb'
-        },
-        ticks: {
-          color: '#6b7280',
-          font: {
-            size: 11
-          },
-          callback: function(value) {
-            return value + '°C';
-          }
-        },
-        title: {
-          display: true,
-          text: 'Temperature (°C)',
-          color: '#6b7280',
-          font: {
-            size: 12,
-            weight: '500'
-          }
-        }
-      }
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Weekly Temperature Stats</h2>
-        <p className="text-sm font-medium text-gray-500">Last 7 days of temperature data</p>
-      </div>
-      <div className="h-[300px]">
-        <Bar options={options} data={chartData} />
-      </div>
-    </div>
-  );
 };
 
-export default WeeklyStats; 
+export default WeeklyStats;
