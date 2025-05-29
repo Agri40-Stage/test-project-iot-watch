@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "chartjs-chart-matrix": "^3.0.0"
+  }
+}

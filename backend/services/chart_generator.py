@@ -7,11 +7,9 @@ import seaborn as sns
 
 def generate_weekly_chart():
     try:
-        # Create directory for saving charts
         charts_dir = os.path.join(os.path.dirname(__file__), '../static/charts')
         os.makedirs(charts_dir, exist_ok=True)
 
-        # Connect to database and fetch temperature data
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -28,22 +26,16 @@ def generate_weekly_chart():
         results = cursor.fetchall()
         conn.close()
 
-        # Prepare data structure
         days = sorted(list(set(row['day'] for row in results)))
-        hours = [f"{h:02d}" for h in range(24)]  # 24-hour format with leading zeros
-
-        # Initialize data matrix with NaN values
-        data = np.zeros((len(days), 24))
-        data.fill(np.nan)
+        hours = [f"{h:02d}" for h in range(24)]
+        data = np.full((len(days), 24), np.nan)
         day_indices = {day: i for i, day in enumerate(days)}
 
-        # Populate data matrix
         for row in results:
             day_idx = day_indices[row['day']]
             hour_idx = int(row['hour'])
             data[day_idx, hour_idx] = row['avg_temp']
 
-        # Set global style parameters
         sns.set_style("whitegrid")
         plt.rcParams.update({
             'font.size': 11,
@@ -53,70 +45,62 @@ def generate_weekly_chart():
             'ytick.labelsize': 10
         })
 
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+
         # ----------------------------
-        # HEATMAP VISUALIZATION
+        # HEATMAP
         # ----------------------------
-        plt.figure(figsize=(13, 8))
+        fig1, ax1 = plt.subplots(figsize=(12, 6))
         masked_data = np.ma.masked_invalid(data)
-        heatmap = plt.pcolormesh(masked_data, cmap='coolwarm', edgecolors='w', linewidth=0.3, vmin=10, vmax=30)
-        
-        # Add colorbar
-        cbar = plt.colorbar(heatmap, shrink=0.9, aspect=30, pad=0.02)
-        cbar.set_label('Temperature (°C)', fontsize=12)
+        cmap = plt.get_cmap('coolwarm')
+        heatmap = ax1.pcolormesh(masked_data, cmap=cmap, edgecolors='w', linewidth=0.3, vmin=10, vmax=30)
 
-        # Configure axes
-        plt.yticks(np.arange(0.5, len(days)), days)
-        plt.xticks(np.arange(0.5, 24), hours)
-        plt.xlabel('Hour of Day')
-        plt.ylabel('Date')
-        plt.title('Hourly Temperature Heatmap (Last 7 Days)', pad=15)
+        cbar = fig1.colorbar(heatmap, ax=ax1, shrink=0.85, aspect=30, pad=0.02)
+        cbar.set_label('Temperature (C)', fontsize=12)
 
-        # Add temperature values to heatmap cells
+        ax1.set_yticks(np.arange(0.5, len(days)))
+        ax1.set_yticklabels(days)
+        ax1.set_xticks(np.arange(0.5, 24))
+        ax1.set_xticklabels(hours)
+        ax1.set_xlabel('Hour of Day')
+        ax1.set_ylabel('Date')
+        ax1.set_title('Hourly Temperature Heatmap (Last 7 Days)', pad=15)
+
         for i in range(len(days)):
             for j in range(24):
                 if not np.isnan(data[i, j]):
                     color = "white" if 15 <= data[i, j] <= 25 else "black"
-                    plt.text(j + 0.5, i + 0.5, f"{data[i, j]:.1f}", 
-                            ha="center", va="center", 
-                            color=color, fontsize=8)
+                    ax1.text(j + 0.5, i + 0.5, f"{data[i, j]:.1f}", ha="center", va="center", color=color, fontsize=7)
 
-        plt.tight_layout()
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        chart_path = os.path.join(charts_dir, f'weekly_heatmap_{timestamp}.png')
-        plt.savefig(chart_path, dpi=150)
-        plt.close()
+        fig1.tight_layout()
+        heatmap_path = os.path.join(charts_dir, f'weekly_heatmap_{timestamp}.png')
+        fig1.savefig(heatmap_path, dpi=200)
+        plt.close(fig1)
 
         # ----------------------------
-        # LINE CHART VISUALIZATION
+        # LINE CHART
         # ----------------------------
-        plt.figure(figsize=(13, 6))
-        
-        # Calculate daily statistics
+        fig2, ax2 = plt.subplots(figsize=(12, 6))
         daily_avg = np.nanmean(data, axis=1)
         daily_min = np.nanmin(data, axis=1)
         daily_max = np.nanmax(data, axis=1)
 
-        # Plot temperature trends
-        plt.plot(days, daily_avg, 'o-', label='Average', color='#ff811f', linewidth=2.5, markerfacecolor='white')
-        plt.plot(days, daily_min, 's--', label='Minimum', color='#1f77b4', alpha=0.8)
-        plt.plot(days, daily_max, 's--', label='Maximum', color='crimson', alpha=0.8)
+        ax2.plot(days, daily_avg, 'o-', label='Average', color='#ff811f', linewidth=2.5, markerfacecolor='white')
+        ax2.plot(days, daily_min, 's--', label='Minimum', color='#1f77b4', alpha=0.8)
+        ax2.plot(days, daily_max, 's--', label='Maximum', color='crimson', alpha=0.8)
+        ax2.fill_between(days, daily_min, daily_max, alpha=0.1, color='gray')
 
-        # Add shaded area between min and max
-        plt.fill_between(days, daily_min, daily_max, alpha=0.1, color='gray')
+        ax2.set_xlabel('Date')
+        ax2.set_ylabel('Temperature (C)')
+        ax2.set_title('Daily Temperature Trends', pad=15)
+        ax2.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
+        ax2.legend()
+        ax2.tick_params(axis='x', rotation=45)
+        fig2.tight_layout()
 
-        # Configure chart appearance
-        plt.xlabel('Date')
-        plt.ylabel('Temperature (°C)')
-        plt.title('Daily Temperature Trends', pad=15)
-        plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
-        plt.legend()
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-
-        # Save line chart
         trend_chart_path = os.path.join(charts_dir, f'weekly_trend_{timestamp}.png')
-        plt.savefig(trend_chart_path, dpi=150)
-        plt.close()
+        fig2.savefig(trend_chart_path, dpi=200)
+        plt.close(fig2)
 
         return {
             'heatmap_path': f'/static/charts/weekly_heatmap_{timestamp}.png',
