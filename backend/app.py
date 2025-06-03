@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+from ml_model import train_predict_temperature  
 
 load_dotenv()
 app = Flask(__name__)
