@@ -10,3 +10,10 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## 🌱 Environment Variables
+
+Create a `.env` file in the root of the frontend with the following content:
+
+VITE_API_URL=https://api.open-meteo.com/v1/forecast
+VITE_API_BASE_URL=http://localhost:5000
