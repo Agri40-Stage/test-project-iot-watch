@@ -1,4 +1,5 @@
 import React from 'react';
+import RAGChat from '../components/RAGCHAT'; // Make sure the path is correct
 
 /* Components */
 import Header from '../components/Header';
@@ -12,6 +13,7 @@ function Home(){
                 <h1 className="font-bold text-5xl">Welcome Home</h1>
                 <p className='max-w-xl text-center '>You can navigate through the navbar above to get different temperature data visualizers for the past 7 days.</p>
             </div>
+            <RAGChat /> {/* Add the RAGChat component here */}
         </div>
     )
 }
