@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+from collections import defaultdict
 
 load_dotenv()
 app = Flask(__name__)
@@ -538,6 +539,52 @@ def get_forecast():
             "success": False,
             "error": str(e)
         })
+
+@app.route('/api/boxplot-data', methods=['GET'])
+def boxplot_data_json():
+    try:
+        # Derniers 5 jours (aujourd’hui inclus)
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=5)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT timestamp, temperature FROM temperature_data 
+            WHERE timestamp BETWEEN ? AND ?
+        """, (start_date.isoformat(), end_date.isoformat()))
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            return jsonify({'error': 'Aucune donnée disponible pour les 5 derniers jours'}), 404
+
+        # Regrouper les températures par jour
+        data_by_day = defaultdict(list)
+        for row in rows:
+            date_str = row['timestamp'][:10]  # YYYY-MM-DD
+            data_by_day[date_str].append(row['temperature'])
+
+        # Convertir en liste triée de dictionnaires
+        formatted_data = [
+            {'date': date,
+                "min": np.min(temps),
+                "q1": np.percentile(temps, 25),
+                "median": np.median(temps),
+                "q3": np.percentile(temps, 75),
+                "max": np.max(temps)
+            } for date, temps in sorted(data_by_day.items())
+        ]
+
+        print({'data' : formatted_data})
+
+        return jsonify({'data' : formatted_data})
+
+
+    except Exception as e:
+        print(f"Erreur dans /api/boxplot-data : {e}")
+        # traceback.print_exc()
+        return jsonify({'error': 'Erreur interne du serveur'}), 500
 
 @app.after_request
 def add_header(response):

@@ -5,6 +5,7 @@ import Content from '../components/Content';
 import Header from '../components/Header';
 // import TemperaturePrediction from '../components/TemperaturePrediction';
 // import WeeklyStats from '../components/WeeklyStats';
+import BoxPlotStats from '../components/BoxPlotStats';
 
 function Temperature(){
     return(
@@ -13,6 +14,7 @@ function Temperature(){
       <Content />
       {/* <TemperaturePrediction />
       <WeeklyStats /> */}
+      <BoxPlotStats />
     </div>
     )
 }
