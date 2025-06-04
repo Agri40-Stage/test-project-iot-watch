@@ -111,7 +111,7 @@ const BoxPlotStats = () => {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
-      <h2 className="text-lg font-semibold mb-4 text-gray-800">BoxPlot des températures (5 derniers jours)</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-800">BoxPlot of temperatures (5 last days)</h2>
       <Plot
         data={plotData}
         layout={{
