@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement } from "chart.js";
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement);
 import { Line } from "react-chartjs-2";
@@ -12,9 +11,25 @@ const getInitialDark = () => {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 };
 
-const TemperatureChart = ({ chartData, chartOptions }) => {
-  // Use getInitialDark to have the correct initial state on refresh (and it updates instantly on toggle)
+const TemperatureChart = () => {
   const [isDark, setIsDark] = useState(getInitialDark());
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: [{
+      label: 'Temperature',
+      data: [],
+      borderColor: '#ff811f',
+      backgroundColor: 'rgba(255, 129, 31, 0.1)',
+      borderWidth: 2,
+      tension: 0.4,
+      fill: true,
+      pointBackgroundColor: '#ff811f',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  });
 
   // Listen for changes to the body's class (dark mode toggle)
   useEffect(() => {
@@ -25,50 +40,85 @@ const TemperatureChart = ({ chartData, chartOptions }) => {
     return () => observer.disconnect();
   }, []);
 
-  // Added options for the chart so the colors can adapt to light or dark mode
+  // Fetch temperature history
+  useEffect(() => {
+    const fetchTemperatureHistory = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/temperature/history`);
+        if (response.ok) {
+          const data = await response.json();
+          const temperatures = data.map(item => item.temperature);
+          const timestamps = data.map(item => new Date(item.timestamp).toLocaleTimeString());
+          
+          setChartData(prevData => ({
+            ...prevData,
+            labels: timestamps,
+            datasets: [{
+              ...prevData.datasets[0],
+              data: temperatures
+            }]
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching temperature history:', error);
+      }
+    };
+
+    fetchTemperatureHistory();
+    const interval = setInterval(fetchTemperatureHistory, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const options = {
-    ...chartOptions,
+    responsive: true,
+    maintainAspectRatio: false,
     scales: {
       x: {
-        ...chartOptions?.scales?.x,
         grid: {
           color: isDark ? "#333" : "#d1d5db",
         },
         ticks: {
           color: isDark ? "#f1f5f9" : "#374151",
-        },
+        }
       },
       y: {
-        ...chartOptions?.scales?.y,
         grid: {
           color: isDark ? "#333" : "#d1d5db",
         },
         ticks: {
           color: isDark ? "#f1f5f9" : "#374151",
         },
-      },
+        title: {
+          display: true,
+          text: 'Temperature (°C)',
+          color: isDark ? "#f1f5f9" : "#374151",
+        }
+      }
     },
     plugins: {
-      ...chartOptions?.plugins,
       legend: {
-        ...chartOptions?.plugins?.legend,
+        position: 'top',
         labels: {
           color: isDark ? "#f1f5f9" : "#1f2937",
-        },
+        }
       },
       tooltip: {
-        ...chartOptions?.plugins?.tooltip,
         backgroundColor: isDark ? "#23272a" : "#fff",
         titleColor: isDark ? "#f1f5f9" : "#1f2937",
         bodyColor: isDark ? "#f1f5f9" : "#1f2937",
         borderColor: isDark ? "#444" : "#e5e7eb",
-      },
-    },
+        callbacks: {
+          label: function(context) {
+            return `Temperature: ${context.parsed.y}°C`;
+          }
+        }
+      }
+    }
   };
 
   return (
     <div className="flex flex-col gap-6 lg:col-span-1 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
-      <div className="w-full flex flex-col gap-2 rtext-left">
+      <div className="w-full flex flex-col gap-2 text-left">
         <h2 className="text-xl font-medium leading-none">
           Temperature History
         </h2>
@@ -85,11 +135,6 @@ const TemperatureChart = ({ chartData, chartOptions }) => {
       </div>
     </div>
   );
-};
-
-TemperatureChart.propTypes = {
-  chartData: PropTypes.object,
-  chartOptions: PropTypes.object,
 };
 
 export default TemperatureChart;
