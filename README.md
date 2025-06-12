@@ -19,20 +19,7 @@ Build a small IoT-enabled web app that:
 
 ## ⚙️ Stack Suggestions
 
-### Backend
-Python (Flask)
-SQLite3 pour la persistance
-IA : Modèle LSTM bidirectionnel (TensorFlow/Keras)
-
-### Frontend
-- React (preferred).
-
-### Optional
-- WebSocket for real-time updates
-- SQLite or local JSON for persistence
-- Docker/Docker Compose
-- GitHub Actions CI
-
+  Domaines : Dev FullStack/Frontend/Backend/DEVOps, Data, IoT, Cloud, DevOps, IA (selon profil)
 
 ---
 ## 🌐 Data Source
@@ -43,17 +30,6 @@ Use one of the following free/public sensor APIs:
 - Any dummy IoT API or mock sensor server
 ---
 
-## ✅ What You’ll Be Assessed On
-
-| Category        | Details                                                                 |
-|----------------|-------------------------------------------------------------------------|
-| Figma design    |  propose or improve a design figma
-| 🏗 Project Setup | Proper use of JHipster to scaffold and configure the app               |
-| 🔒 Authentication | Secure login system using JWT and protected API routes                  |
-| 💻 Frontend       | Functional React UI to manage employees with proper state handling     |
-| 📦 API Usage      | Clean and secure usage of RESTful APIs                                 |
-| 🧼 Code Quality   | Maintainable, modular, and readable code                               |
-| 🔁 Git Practices  | Use of Git flow, meaningful commit messages, and clean pull requests   |
 
 ## Evaluation Criteria
 | Area              | Importance |
