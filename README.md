@@ -3,6 +3,7 @@
 A full-stack mini project that fetches real-time temperature data from an online sensor API and displays it on a simple dashboard.
 
 > ⏱ This project is designed as a 2-day technical test for technician-level developers.
+> How to Contribute : https://www.youtube.com/embed/yzeVMecydCE
 
 ---
 
@@ -31,7 +32,7 @@ IA : Modèle LSTM bidirectionnel (TensorFlow/Keras)
 - SQLite or local JSON for persistence
 - Docker/Docker Compose
 - GitHub Actions CI
-- How to Contribute : https://www.youtube.com/embed/yzeVMecydCE
+
 
 ---
 ## 🌐 Data Source
