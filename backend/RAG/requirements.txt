@@ -1,0 +1,8 @@
+flask
+flask-cors
+pymupdf
+faiss-cpu
+scikit-learn
+google-generativeai
+langchain
+python-dotenv
