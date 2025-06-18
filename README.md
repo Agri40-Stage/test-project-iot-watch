@@ -1,19 +1,29 @@
 # 🌡️ IoT Temp Watch
 
-A full-stack mini project that fetches real-time temperature data from an online sensor API and displays it on a simple dashboard.
+A full-stack mini project that retrieves real-time temperature data from a public sensor API and displays it on a modern dashboard.
 
-> ⏱ This project is designed as a 2-day technical test for technician-level developers.
+> ⏱ Designed as a 2-day technical challenge for junior or technician-level developers.
 
 ---
 
-## 📌 Project Goal
+## Project Goal
 
 Build a small IoT-enabled web app that:
 - Retrieves temperature or humidity data from a public sensor API
 - Stores and exposes the data via a backend service
 - Displays the data in real time or at regular intervals via a frontend interface
 - integrate AI features (LLM, RAG, Model deep learning, ...)
+- IoT
+- Secuirity
+- ...
 
+## TODO – Practical Tasks
+This challenge also assesses your hands-on engineering skills through the following tasks:
+
+- Analyze existing code to understand its structure and logic
+- Review a pull request, leaving at least one meaningful comment in English
+- Submit a small technical implementation via a pull request (PR)
+- Create a clear and relevant GitHub Issue, describing a problem or suggesting an improvement
 ---
 
 ## ⚙️ Stack Suggestions
@@ -21,14 +31,13 @@ Build a small IoT-enabled web app that:
 ### Backend
 Python (Flask)
 SQLite3 pour la persistance
-IA : Modèle LSTM bidirectionnel (TensorFlow/Keras)
 
 ### Frontend
 - React (preferred).
 
 ### Optional
 - WebSocket for real-time updates
-- SQLite or local JSON for persistence
+- SQLite for persistence
 - Docker/Docker Compose
 - GitHub Actions CI
 - How to Contribute : https://www.youtube.com/embed/yzeVMecydCE
@@ -65,32 +74,6 @@ Use one of the following free/public sensor APIs:
 | Bonus features    | ★★☆☆☆     |
 | IoT               | ★★★★☆     |
 
-## Project Structure
-```
-iot-temp-watch/
-├── .githup/
-│   └── workflows/
-│       └── ci.yml
-├── backend/
-│   ├── app.py
-│   ├── models.py
-│   ├── requirements.txt
-│   ├── database/
-│   ├── model/
-│   │   └── m.keras
-│   └── services/
-│       └── weather_fetcher.py
-├── data/
-│   └── latest.js
-│   └── history.js
-├── frontend/
-│   └────── src/
-│       ├── public/
-│       ├── dist/
-│       └── package.json
-│
-└── README.md
-```
 
 ## Configuration manuelle
 
@@ -163,6 +146,3 @@ Le backend fournit les points de terminaison suivants :
 
 - `/data/latest` – Obtenir la dernière température avec tendance
 - `/data/history` – Obtenir l'historique des températures des dernières heures
-
-## Projet origine
-- https://github.com/agri40/test-project-iot-watch.git
