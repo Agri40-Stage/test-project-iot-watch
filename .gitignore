@@ -1,0 +1,10 @@
+# Ignorer les fichiers Python compiles
+__pycache__/
+*.pyc
+
+# Ignorer la base de donnees locale
+*.db
+
+# Ignorer l'environnement virtuel
+iot_env/
+.env/

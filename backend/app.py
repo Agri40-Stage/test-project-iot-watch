@@ -12,7 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
-
+from services.chart_data_service import get_weekly_chart_data
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
@@ -191,7 +191,31 @@ def get_temperature_history():
         return jsonify({"error": str(e)})
     finally:
         conn.close()
+@app.route('/api/weekly-chart-data', methods=['GET'])
+def get_weekly_chart_data_endpoint():
+    """Endpoint to provide weekly temperature data for Chart.js."""
+    try:
+        data = get_weekly_chart_data()
+        if 'error' in data:
+            return jsonify({"error": data['error']}), 500
+        return jsonify(data)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error getting weekly chart data: {str(e)}")
+        return jsonify({"error": "Failed to retrieve chart data"}), 500
 
+# Route pour servir les fichiers statiques
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Serve static files from the static directory"""
+    try:
+        return send_from_directory('static', path)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+    except Exception as e:
+        print(f"Error serving static file: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
     try:
@@ -250,10 +274,12 @@ def get_weekly_stats():
             avg_temps = []
 
         return jsonify({
-            "dates": dates,
-            "minTemps": min_temps,
-            "maxTemps": max_temps,
-            "avgTemps": avg_temps
+            "days": dates,
+            "min_temps": min_temps,
+            "max_temps": max_temps,
+            "avg_temps": avg_temps,
+            "weekly_avg": float(np.mean(avg_temps)) if avg_temps else None,
+            "temp_std_dev": float(np.std(avg_temps)) if avg_temps else None
         })
         
     except Exception as e:
@@ -262,10 +288,12 @@ def get_weekly_stats():
         return jsonify({
             "success": False,
             "error": str(e),
-            "dates": [],
-            "minTemps": [],
-            "maxTemps": [],
-            "avgTemps": []
+            "days": [],
+            "min_temps": [],
+            "max_temps": [],
+            "avg_temps": [],
+            "weekly_avg": None,
+            "temp_std_dev": None
         })
 
 @app.route('/api/predict', methods=['GET'])
