@@ -12,6 +12,8 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+from utils import celsius_to_fahrenheit
+
 
 load_dotenv()
 app = Flask(__name__)
@@ -558,6 +560,14 @@ def serve(path):
         return send_from_directory(static_dir, path)
     else:
         return send_from_directory(static_dir, 'index.html')
+
+@app.route('/convert/<int:celsius>')
+def convert_temp(celsius):
+    fahrenheit = celsius_to_fahrenheit(celsius)
+    return {
+        "celsius": celsius,
+        "fahrenheit": fahrenheit
+    }
 
 if __name__ == "__main__":
     run_background_services()
