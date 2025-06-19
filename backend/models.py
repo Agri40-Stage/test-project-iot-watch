@@ -2,7 +2,7 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 import numpy as np
-from tensorflow.keras.models import load_model
+#from tensorflow.keras.models import load_model
 
 BASE_TEMP = 25.0
 DEFAULT_LATITUDE = 30.4202
@@ -103,40 +103,40 @@ def purge_old_data():
     conn.close()
     print(f"Purged data older than {threshold_date}")
 
-def load_prediction_model():
-    """Load the Keras prediction model (cached version)"""
-    
-    # Define possible model paths
-    model_dir = os.path.join(os.path.dirname(__file__), 'model')
-    possible_paths = [
-        os.path.join(model_dir, 'ml.keras'),
-        os.path.join(os.path.dirname(__file__), 'ml.keras')
-    ]
-    
-    print(f"Attempting to load model from possible paths:")
-    for path in possible_paths:
-        print(f"Checking path: {path}")
-        print(f"Path exists: {os.path.exists(path)}")
-    
-    # Try each possible path
-    for model_path in possible_paths:
-        try:
-            if os.path.exists(model_path):
-                print(f"Loading model from: {model_path}")
-                model = load_model(model_path, compile=False)
-                print(f"Successfully loaded Keras model from {model_path} (cached)")
-                return model
-            else:
-                print(f"Model file not found at: {model_path}")
-        except Exception as e:
-            print(f"Error loading model from {model_path}:")
-            print(f"Error type: {type(e).__name__}")
-            print(f"Error message: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            continue
-    
-    raise ValueError("Could not load the prediction model from any of the specified paths")
+# def load_prediction_model():
+#     """Load the Keras prediction model (cached version)"""
+#     
+#     # Define possible model paths
+#     model_dir = os.path.join(os.path.dirname(__file__), 'model')
+#     possible_paths = [
+#         os.path.join(model_dir, 'ml.keras'),
+#         os.path.join(os.path.dirname(__file__), 'ml.keras')
+#     ]
+#     
+#     print(f"Attempting to load model from possible paths:")
+#     for path in possible_paths:
+#         print(f"Checking path: {path}")
+#         print(f"Path exists: {os.path.exists(path)}")
+#     
+#     # Try each possible path
+#     for model_path in possible_paths:
+#         try:
+#             if os.path.exists(model_path):
+#                 print(f"Loading model from: {model_path}")
+#                 model = load_model(model_path, compile=False)
+#                 print(f"Successfully loaded Keras model from {model_path} (cached)")
+#                 return model
+#             else:
+#                 print(f"Model file not found at: {model_path}")
+#         except Exception as e:
+#             print(f"Error loading model from {model_path}:")
+#             print(f"Error type: {type(e).__name__}")
+#             print(f"Error message: {str(e)}")
+#             import traceback
+#             traceback.print_exc()
+#             continue
+#     
+#     raise ValueError("Could not load the prediction model from any of the specified paths")
 
 def standardize_timestamp(timestamp):
     """Convert any timestamp to YYYY-MM-DD HH:MM format"""
