@@ -65,6 +65,10 @@ def run_background_services():
     print(f"Prediction updates scheduled (daily at midnight)")
     
     print("All background services started successfully")
+    
+@app.route('/predict', methods=['GET'])
+def get_predict():
+    pass
 
 @app.route('/api/latest', methods=['GET'])
 def get_latest_temperature():

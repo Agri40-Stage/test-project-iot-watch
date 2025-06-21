@@ -43,6 +43,7 @@ function Header() {
                     <li className="font-medium text-xl cursor-pointer"><Link to="/">Home</Link></li>
                     <li className="font-medium text-xl cursor-pointer"><Link to="/temperature">Temperature</Link></li>
                     <li className="font-medium text-xl cursor-pointer"><Link to="/humidity">Humidity</Link></li>
+					<li className="font-medium text-xl cursor-pointer"><Link to="/prediction">Prediction</Link></li>
                 </ul>
                 {/* Buttons and light mode/dark mode toggle */}
                 <div className="hidden md:flex flex-row space-x-4 flex-1 justify-end items-center">
