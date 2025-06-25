@@ -81,6 +81,19 @@ const Content = () => {
     return () => clearInterval(interval);
   }, []);
 
+    // Message d'alerte si la température dépasse 35°C
+  const renderAlert = () => {
+    if (latestTemperature !== null && latestTemperature > 35) {
+      return (
+        <div className="p-4 bg-red-600 text-white rounded font-bold">
+           Alerte : Température élevée détectée ({latestTemperature}°C)
+        </div>
+      );
+    }
+    return null;
+  };
+
+
 
   return (
     
@@ -92,6 +105,7 @@ const Content = () => {
         <p className="text-sm font-light text-gray-400">
           Monitor real-time temperature data and historical trends
         </p>
+        {renderAlert()}
       </div>
 
       <div className="grid gap-4 grid-cols-1 xl:grid-cols-[384px_1fr]">
