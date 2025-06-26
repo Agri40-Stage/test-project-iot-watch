@@ -84,7 +84,7 @@ const Content = () => {
 
   return (
     
-    <div className="flex flex-col gap-8 py-12 px-6">
+    <div className="flex flex-col gap-8 py-3 px-6">
       <div className="w-full flex flex-col gap-2 text-left">
         <h1 className="font-bold text-3xl">
           Temperature Dashboard

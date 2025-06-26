@@ -12,6 +12,9 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+import google.generativeai as genai
+import re
+import requests
 
 load_dotenv()
 app = Flask(__name__)
@@ -91,7 +94,9 @@ def get_latest_temperature():
                 "time": datetime.now().isoformat(),
                 "temperature": current_temp,
                 "trend": "stable",
-                "is_live": True
+                "is_live": True,
+                "latitude": float(latitude),
+                "longitude": float(longitude)
             })
         
         # Get current hour's average
@@ -114,21 +119,26 @@ def get_latest_temperature():
         
         prev_hour_avg = cursor.fetchone()
         
-        # Calculate trend
+        # Calculate trend safely
         trend = "stable"
-        if prev_hour_avg and hour_stats:
-            if hour_stats['avg_temp'] > prev_hour_avg['avg_temp']:
+        hour_avg = hour_stats['avg_temp'] if hour_stats else None
+        prev_avg = prev_hour_avg['avg_temp'] if prev_hour_avg else None
+        if hour_avg is not None and prev_avg is not None:
+            if hour_avg > prev_avg:
                 trend = "up"
-            elif hour_stats['avg_temp'] < prev_hour_avg['avg_temp']:
+            elif hour_avg < prev_avg:
                 trend = "down"
+        # If either is None, trend remains 'stable'
         
         return jsonify({
             "time": latest['timestamp'],
             "temperature": float(latest['temperature']),
-            "current_hour_avg": float(hour_stats['avg_temp']) if hour_stats else None,
+            "current_hour_avg": float(hour_avg) if hour_avg is not None else None,
             "readings_this_hour": hour_stats['count'] if hour_stats else 0,
             "trend": trend,
-            "is_live": True
+            "is_live": True,
+            "latitude": float(latest['latitude']),
+            "longitude": float(latest['longitude'])
         })
         
     except Exception as e:
@@ -139,7 +149,10 @@ def get_latest_temperature():
 
 @app.route('/api/history', methods=['GET'])
 def get_temperature_history():
-    """Get the last 10 individual temperature readings"""
+    """
+    Get hourly average temperatures for the last 10 hours.
+    Returns timestamps and temperatures for the frontend chart.
+    """
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
     longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
     
@@ -147,43 +160,31 @@ def get_temperature_history():
     cursor = conn.cursor()
     
     try:
-        # Get the last 10 individual temperature readings
+        # Get the last 10 hours with data, average temperature per hour
         cursor.execute('''
-        SELECT timestamp, temperature
-        FROM temperature_data
-        WHERE latitude = ? AND longitude = ?
-        ORDER BY timestamp DESC
-        LIMIT 10
-        ''', (latitude, longitude))
-        readings = cursor.fetchall()
-        if not readings:
-            get_current_temperature()
-
-            # Try fetching again
-            cursor.execute('''
-            SELECT timestamp, temperature
+            SELECT strftime('%Y-%m-%d %H', timestamp) as hour, AVG(temperature) as avg_temp
             FROM temperature_data
             WHERE latitude = ? AND longitude = ?
-            ORDER BY timestamp DESC
+            GROUP BY hour
+            ORDER BY hour DESC
             LIMIT 10
             ''', (latitude, longitude))
+        rows = cursor.fetchall()
             
-            readings = cursor.fetchall()
+        # Reverse to chronological order
+        rows = rows[::-1]
         
-        # Convert to lists in chronological order
-        readings = readings[::-1]  # Reverse to get chronological order
+        timestamps = [row['hour'] + ':00:00' for row in rows]  # Added minutes/seconds for frontend compatibility
+        temperatures = [float(row['avg_temp']) for row in rows]
         
-        timestamps = [record['timestamp'] for record in readings]
-        temperatures = [float(record['temperature']) for record in readings]
-        
-        print(f"[{datetime.now().isoformat()}] Returning {len(readings)} temperature readings")
+        print(f"[{datetime.now().isoformat()}] Returning {len(rows)} hourly average temperature readings")
         
         return jsonify({
             "lastTimestamps": timestamps,
             "lastTemperatures": temperatures,
             "updateInterval": 1,
-            "count": len(readings),
-            "isHourlyAverage": False
+            "count": len(rows),
+            "isHourlyAverage": True
         })
         
     except Exception as e:
@@ -538,6 +539,75 @@ def get_forecast():
             "success": False,
             "error": str(e)
         })
+
+@app.route('/api/gemini-insight', methods=['GET'])
+def gemini_insight():
+    """
+    Generate a summary of recent temperatures using Google Gemini AI.
+    """
+    # Set up Gemini AI with your API key
+    genai.configure(api_key="AIzaSyAZUkDd091v888ouhuqARPhzpoCiKra98A")
+    model = genai.GenerativeModel("gemini-1.5-flash")
+
+    try:
+        # Get the last 7 days of temperature data
+        with app.test_request_context():
+            response = get_weekly_stats()
+            data = response.get_json()
+
+        dates = data.get("dates", [])
+        temps = data.get("avgTemps", [])
+
+        # Get today's temperature (the last value)
+        if temps:
+            today_temp = temps[-1]
+            today_temp_str = f"{today_temp:.1f}°C"
+        else:
+            today_temp = None
+            today_temp_str = "N/A"
+
+        # Create a list with temperature info for the past week
+        week_info = []
+        total_days = len(dates)
+
+        for i in range(total_days):
+            # Label each day (e.g., "Day -6", "Day -5", ..., "Today")
+            if i == total_days - 1:
+                label = "Today"
+            else:
+                days_ago = total_days - 1 - i
+                label = f"Day -{days_ago}"
+
+            temp = temps[i]
+            if temp is not None:
+                line = f"  - {label}: {temp:.1f}°C"
+                week_info.append(line)
+
+        week_text = "\n".join(week_info)
+
+        # Create a prompt for the AI
+        prompt = (
+            f"Summarize the temperature insight for today:\n\n"
+            f"- Today's average temperature: {today_temp_str}\n"
+            f"- Last week's average temperatures:\n{week_text}\n\n"
+            f"Focus on:\n"
+            f"- How today compares to the week's average\n"
+            f"- Any trends or patterns\n"
+            f"- Keep it clear and neutral\n"
+            f"- No greetings or fluff"
+        )
+
+    except Exception:
+        prompt = "Temperature data is currently unavailable."
+
+    # Ask Gemini to generate the summary
+    response = model.generate_content(prompt)
+
+    # Clean up the AI's response (remove extra asterisks, spaces)
+    insight = re.sub(r'^\*+|\*+$', '', response.text.strip()).strip()
+
+    return jsonify({"insight": insight})
+
 
 @app.after_request
 def add_header(response):
