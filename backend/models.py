@@ -2,11 +2,14 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 import numpy as np
-from tensorflow.keras.models import load_model
+from sqlalchemy import Column, String, Integer
+from sqlalchemy.ext.declarative import declarative_base
 
 BASE_TEMP = 25.0
 DEFAULT_LATITUDE = 30.4202
 DEFAULT_LONGITUDE = -9.5982
+
+Base = declarative_base()
 
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'temperature.db')
@@ -66,6 +69,16 @@ def init_db():
     # Create index for faster querying
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON temperature_data(timestamp)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_target_date ON temperature_predictions(target_date)')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        user TEXT,
+        action TEXT,
+        log_type TEXT
+    )
+    ''')
     
     conn.commit()
     
@@ -148,3 +161,27 @@ def standardize_timestamp(timestamp):
         return dt.strftime('%Y-%m-%d %H:%M')
     except:
         return datetime.now().strftime('%Y-%m-%d %H:%M')
+
+class Device(Base):
+    __tablename__ = 'devices'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    api_key = Column(String, unique=True)
+
+def add_log(user, action, log_type):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO logs (timestamp, user, action, log_type) VALUES (?, ?, ?, ?)",
+        (datetime.now().isoformat(), user, action, log_type)
+    )
+    conn.commit()
+    conn.close()
+
+def get_logs(log_type):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM logs WHERE log_type = ? ORDER BY timestamp DESC", (log_type,))
+    logs = cursor.fetchall()
+    conn.close()
+    return logs
