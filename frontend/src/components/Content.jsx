@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 /* Components */
-import TemperatureCrad from "../components/TemperatureCrad";
+import TemperatureCrad from "./TemperatureCard";
 import TemperatureChart from "../components/TemperatureChart";
 import Header from "../components/Header";
 
