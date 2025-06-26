@@ -6,7 +6,7 @@ import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import Temperature from "./pages/Temperature"
 import Humidity from './pages/Humidity';
 import Home from './pages/Home';
-
+import ContactUs from './pages/ContactUs';
 
 function App() {
 
@@ -17,6 +17,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/temperature" element={<Temperature />} />
         <Route path="/humidity" element={<Humidity />} />
+        <Route path="/contact" element={<ContactUs />} />
       </Routes>
     
     
