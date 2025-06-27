@@ -12,7 +12,9 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
-
+from insights import generate_insights
+import traceback
+import json
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
@@ -538,6 +540,33 @@ def get_forecast():
             "success": False,
             "error": str(e)
         })
+
+@app.route('/api/insights', methods=['GET'])
+def get_insights():
+    try:
+        insights = generate_insights()
+        
+        if "error" in insights:
+            return jsonify({
+                "success": False,
+                "message": insights.get("error"),
+                "details": insights.get("message", "")
+            }), 500
+
+        return jsonify({
+            "success": True,
+            "insights": insights
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": "Unexpected failure during insights generation",
+            "message": str(e)
+        }), 500
+
 
 @app.after_request
 def add_header(response):
