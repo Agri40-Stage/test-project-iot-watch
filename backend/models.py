@@ -15,22 +15,31 @@ def get_db_connection():
     return conn
 
 def generate_mock_data(clear_existing=True):
-    """Generate mock temperature data for testing"""
+    """Generate mock temperature and humidity data for testing"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
     if clear_existing:
         cursor.execute('DELETE FROM temperature_data')
+        cursor.execute('DELETE FROM humidity_data')
     
     # Generate data for the last 7 days
     base_time = datetime.now() - timedelta(days=7)
     for i in range(168):
         timestamp = (base_time + timedelta(hours=i)).isoformat()
         temperature = BASE_TEMP + np.random.normal(0, 2)
+        humidity = 60.0 + np.random.normal(0, 10)  # Base humidity around 60%
+        humidity = max(0, min(100, humidity))  # Clamp between 0-100%
+        
         cursor.execute('''
         INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
         VALUES (?, ?, ?, ?)
         ''', (timestamp, temperature, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+        
+        cursor.execute('''
+        INSERT INTO humidity_data (timestamp, humidity, latitude, longitude)
+        VALUES (?, ?, ?, ?)
+        ''', (timestamp, humidity, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
     
     conn.commit()
     conn.close()
@@ -63,16 +72,44 @@ def init_db():
     )
     ''')
     
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS humidity_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        humidity REAL NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS humidity_predictions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        prediction_date TEXT NOT NULL,
+        target_date TEXT NOT NULL,
+        hour INTEGER NOT NULL,
+        humidity REAL NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        UNIQUE(target_date, hour, latitude, longitude)
+    )
+    ''')
+    
     # Create index for faster querying
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON temperature_data(timestamp)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_target_date ON temperature_predictions(target_date)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_humidity_timestamp ON humidity_data(timestamp)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_humidity_target_date ON humidity_predictions(target_date)')
     
     conn.commit()
     
     cursor.execute('SELECT COUNT(*) FROM temperature_data')
-    count = cursor.fetchone()[0]
+    temp_count = cursor.fetchone()[0]
     
-    if count == 0:
+    cursor.execute('SELECT COUNT(*) FROM humidity_data')
+    humidity_count = cursor.fetchone()[0]
+    
+    if temp_count == 0 or humidity_count == 0:
         print("Database is empty. Populating with mock data...")
         conn.close()
         generate_mock_data()
@@ -92,10 +129,20 @@ def purge_old_data():
     WHERE timestamp < ?
     ''', (threshold_date,))
     
+    cursor.execute('''
+    DELETE FROM humidity_data
+    WHERE timestamp < ?
+    ''', (threshold_date,))
+    
     # Delete predictions older than 5 days
     prediction_threshold = (datetime.now() - timedelta(days=5)).isoformat()
     cursor.execute('''
     DELETE FROM temperature_predictions
+    WHERE prediction_date < ?
+    ''', (prediction_threshold,))
+    
+    cursor.execute('''
+    DELETE FROM humidity_predictions
     WHERE prediction_date < ?
     ''', (prediction_threshold,))
     
@@ -137,6 +184,41 @@ def load_prediction_model():
             continue
     
     raise ValueError("Could not load the prediction model from any of the specified paths")
+
+def load_humidity_model():
+    """Load the Keras humidity prediction model"""
+    
+    # Define possible model paths
+    model_dir = os.path.join(os.path.dirname(__file__), 'model')
+    possible_paths = [
+        os.path.join(model_dir, 'humidity.keras'),
+        os.path.join(os.path.dirname(__file__), 'humidity.keras')
+    ]
+    
+    print(f"Attempting to load humidity model from possible paths:")
+    for path in possible_paths:
+        print(f"Checking path: {path}")
+        print(f"Path exists: {os.path.exists(path)}")
+    
+    # Try each possible path
+    for model_path in possible_paths:
+        try:
+            if os.path.exists(model_path):
+                print(f"Loading humidity model from: {model_path}")
+                model = load_model(model_path, compile=False)
+                print(f"Successfully loaded Keras humidity model from {model_path}")
+                return model
+            else:
+                print(f"Humidity model file not found at: {model_path}")
+        except Exception as e:
+            print(f"Error loading humidity model from {model_path}:")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            continue
+    
+    raise ValueError("Could not load the humidity prediction model from any of the specified paths")
 
 def standardize_timestamp(timestamp):
     """Convert any timestamp to YYYY-MM-DD HH:MM format"""
