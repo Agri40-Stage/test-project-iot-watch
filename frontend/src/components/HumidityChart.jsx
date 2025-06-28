@@ -100,9 +100,20 @@ const HumidityChart = () => {
   };
 
     return ( 
-        <div className="flex justify-center items-center min-h-1/2 w-4xl">
-            <div className="w-full h-full">
-                {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading...</p>}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full">
+            <div className="mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Humidity History</h2>
+                <p className="text-sm font-medium text-gray-500">Past 7 Days Maximum Humidity</p>
+            </div>
+            <div className="h-[300px]">
+                {humidityData ? <Line options={options} data={humidityData} /> : (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-gray-600">Loading humidity data...</p>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
