@@ -38,7 +38,7 @@ export default function Insights() {
     loadInsights();
 
     // Set up hourly interval 
-    intervalId = setInterval(loadInsights, 60000);
+    intervalId = setInterval(loadInsights, 3600000);
 
     // Cleanup on unmount
     return () => clearInterval(intervalId);
