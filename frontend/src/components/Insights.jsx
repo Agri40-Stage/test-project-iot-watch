@@ -1,4 +1,3 @@
-// src/components/Insights.jsx
 import React, { useEffect, useState } from "react";
 import { fetchInsights } from "../api/insights";
 
@@ -8,34 +7,41 @@ export default function Insights() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // wrap everything in an async so we can catch
-    (async () => {
+    let intervalId;
+
+    const loadInsights = async () => {
+      setLoading(true);
       try {
         const json = await fetchInsights();
         console.log("✅ insights response:", json);
-        
+
         if (!json.success) {
           throw new Error(json.error || json.message || "Unknown error");
         }
-        
-        // Check if insights data exists and has the right structure
-        if (!json.insights) {
-          throw new Error("No insights data in response");
-        }
-        
-        if (!json.insights.summary || !Array.isArray(json.insights.highlights)) {
+
+        if (!json.insights || !json.insights.summary || !Array.isArray(json.insights.highlights)) {
           console.warn("⚠️ Unexpected insights structure:", json.insights);
           throw new Error("Invalid insights data structure");
         }
-        
+
         setData(json);
+        setError(null);
       } catch (err) {
         console.error("❌ fetchInsights error:", err);
         setError(err);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    // Initial load
+    loadInsights();
+
+    // Set up hourly interval 
+    intervalId = setInterval(loadInsights, 60000);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   if (loading) {

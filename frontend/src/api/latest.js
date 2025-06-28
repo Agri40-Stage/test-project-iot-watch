@@ -16,7 +16,8 @@ const fetchLatestTemperature = async () => {
       // Store the latest temperature in local storage for trend calculation
       // So in the next fetch, we can compare the latest temperature with the previous one
       // and determine if the temperature is rising, falling, or stable
-      const latestTemperature = localStorage.getItem("latestTemperature") || 0;
+      const latestTemperature = parseFloat(localStorage.getItem("latestTemperature")) || 0;
+
 
       let trend = "";
       if (temperature > latestTemperature) {

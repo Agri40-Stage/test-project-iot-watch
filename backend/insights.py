@@ -172,7 +172,7 @@ def generate_insights():
         print("[DEBUG] Calling Gemini API")
         
         # Call Gemini API
-        model = genai.GenerativeModel("models/gemini-1.5-flash")
+        model = genai.GenerativeModel("models/gemini-2.0-flash")
         response = model.generate_content(prompt)
         
         if not response or not response.text:
@@ -226,13 +226,3 @@ def generate_insights():
             "traceback": traceback.format_exc()
         }
 
-# Test function for debugging
-def test_insights():
-    """Test function to debug insights generation"""
-    print("Testing insights generation...")
-    result = generate_insights()
-    print(f"Result: {json.dumps(result, indent=2)}")
-    return result
-
-if __name__ == "__main__":
-    test_insights()
