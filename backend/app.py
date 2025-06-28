@@ -28,14 +28,14 @@ last_prediction_time = None
 init_db()
 
 def run_background_services():
-    def temperature_updater():
-        """Update temperature data continuously"""
+    def weather_updater():
+        """Update temperature and humidity data continuously"""
         while True:
             try:
-                get_current_temperature()
+                get_current_temperature_and_humidity()
                 time.sleep(1)
             except Exception as e:
-                print(f"Error in temperature updater: {str(e)}")
+                print(f"Error in weather updater: {str(e)}")
                 time.sleep(1)
     
     def scheduler():
@@ -52,11 +52,11 @@ def run_background_services():
                 print(f"Error in scheduler: {str(e)}")
                 time.sleep(1)
     
-    # Start temperature updater in a background thread
-    temp_thread = threading.Thread(target=temperature_updater)
-    temp_thread.daemon = True
-    temp_thread.start()
-    print("Background temperature updates started (every second)")
+    # Start weather updater in a background thread
+    weather_thread = threading.Thread(target=weather_updater)
+    weather_thread.daemon = True
+    weather_thread.start()
+    print("Background weather updates started (every second)")
   
     # Start scheduler in a background thread
     scheduler_thread = threading.Thread(target=scheduler)
@@ -537,6 +537,368 @@ def get_forecast():
         return jsonify({
             "success": False,
             "error": str(e)
+        })
+
+@app.route('/api/humidity/latest', methods=['GET'])
+def get_latest_humidity():
+    """Get the latest humidity reading and current hour's average"""
+    latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+    longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('''
+        SELECT * FROM humidity_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+        ''', (latitude, longitude))
+        
+        latest = cursor.fetchone()
+        
+        if not latest:
+            current_humidity = get_current_humidity()
+            return jsonify({
+                "time": datetime.now().isoformat(),
+                "humidity": current_humidity,
+                "trend": "stable",
+                "is_live": True
+            })
+        
+        # Get current hour's average
+        current_hour = datetime.now().strftime('%Y-%m-%d %H')
+        cursor.execute('''
+        SELECT AVG(humidity) as avg_humidity, COUNT(*) as count
+        FROM humidity_data
+        WHERE strftime('%Y-%m-%d %H', timestamp) = ?
+        AND latitude = ? AND longitude = ?
+        ''', (current_hour, latitude, longitude))
+        
+        hour_stats = cursor.fetchone()        
+        prev_hour = (datetime.now() - timedelta(hours=1)).strftime('%Y-%m-%d %H')
+        cursor.execute('''
+        SELECT AVG(humidity) as avg_humidity
+        FROM humidity_data
+        WHERE strftime('%Y-%m-%d %H', timestamp) = ?
+        AND latitude = ? AND longitude = ?
+        ''', (prev_hour, latitude, longitude))
+        
+        prev_hour_avg = cursor.fetchone()
+        
+        # Calculate trend
+        trend = "stable"
+        if prev_hour_avg and hour_stats:
+            if hour_stats['avg_humidity'] > prev_hour_avg['avg_humidity']:
+                trend = "up"
+            elif hour_stats['avg_humidity'] < prev_hour_avg['avg_humidity']:
+                trend = "down"
+        
+        return jsonify({
+            "time": latest['timestamp'],
+            "humidity": float(latest['humidity']),
+            "current_hour_avg": float(hour_stats['avg_humidity']) if hour_stats else None,
+            "readings_this_hour": hour_stats['count'] if hour_stats else 0,
+            "trend": trend,
+            "is_live": True
+        })
+        
+    except Exception as e:
+        print(f"Error getting latest humidity: {str(e)}")
+        return jsonify({"error": str(e)})
+    finally:
+        conn.close()
+
+@app.route('/api/humidity/history', methods=['GET'])
+def get_humidity_history():
+    """Get the last 10 individual humidity readings"""
+    latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+    longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Get the last 10 individual humidity readings
+        cursor.execute('''
+        SELECT timestamp, humidity
+        FROM humidity_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 10
+        ''', (latitude, longitude))
+        readings = cursor.fetchall()
+        
+        if not readings:
+            get_current_humidity()
+            # Try fetching again
+            cursor.execute('''
+            SELECT timestamp, humidity
+            FROM humidity_data
+            WHERE latitude = ? AND longitude = ?
+            ORDER BY timestamp DESC
+            LIMIT 10
+            ''', (latitude, longitude))
+            
+            readings = cursor.fetchall()
+        
+        # Convert to lists in chronological order
+        readings = readings[::-1]  # Reverse to get chronological order
+        
+        timestamps = [record['timestamp'] for record in readings]
+        humidities = [float(record['humidity']) for record in readings]
+        
+        print(f"[{datetime.now().isoformat()}] Returning {len(readings)} humidity readings")
+        
+        return jsonify({
+            "lastTimestamps": timestamps,
+            "lastHumidities": humidities,
+            "updateInterval": 1,
+            "count": len(readings),
+            "isHourlyAverage": False
+        })
+        
+    except Exception as e:
+        print(f"Error getting humidity history: {str(e)}")
+        return jsonify({"error": str(e)})
+    finally:
+        conn.close()
+        
+@app.route('/api/humidity/predict', methods=['GET'])
+def predict_humidity():
+    """Get humidity predictions from database"""
+    try:
+        day = int(request.args.get('day', '1'))
+        if day < 1 or day > 5:
+            return jsonify({"error": "Day parameter must be between 1 and 5"})
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Calculate the date range starting from tomorrow
+        tomorrow = datetime.now() + timedelta(days=1)
+        start_time = tomorrow + timedelta(days=day-1)
+        start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(days=1)
+        
+        # Get predictions from database
+        cursor.execute('''
+        SELECT * FROM humidity_predictions
+        WHERE target_date >= ? AND target_date < ?
+        ORDER BY hour ASC
+        ''', (start_time.isoformat(), end_time.isoformat()))
+        
+        predictions = cursor.fetchall()
+        conn.close()
+        
+        if not predictions:
+            print(f"No humidity predictions found for day {day}, generating new predictions...")
+            result = predict_humidity_for_day(day)
+            return jsonify(result)
+        
+        # Format the predictions
+        hourly_predictions = []
+        timestamps = []
+        humidities = []
+        
+        for pred in predictions:
+            target_time = datetime.fromisoformat(pred['target_date'])
+            hourly_predictions.append({
+                "hour": pred['hour'],
+                "time": target_time.strftime("%H:00"),
+                "humidity": pred['humidity']
+            })
+            timestamps.append(pred['target_date'])
+            humidities.append(pred['humidity'])
+        
+        return jsonify({
+            "day": day,
+            "date": start_time.strftime("%Y-%m-%d"),
+            "day_of_week": start_time.strftime("%A"),
+            "timestamps": timestamps,
+            "predictions": [p["humidity"] for p in hourly_predictions],
+            "hourly": hourly_predictions,
+            "min_humidity": min(humidities) if humidities else None,
+            "max_humidity": max(humidities) if humidities else None,
+            "avg_humidity": sum(humidities) / len(humidities) if humidities else None
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)})
+
+def predict_humidity_for_day(day):
+    """Generate humidity predictions for a specific day and store in database"""
+    try:
+        # For now, use statistical approach instead of ML model due to compatibility issues
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            tomorrow = datetime.now() + timedelta(days=1)
+            start_time = tomorrow + timedelta(days=day-1)
+            start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_time = start_time + timedelta(days=1)
+            
+            # Get historical data for better predictions
+            cursor.execute('''
+            SELECT timestamp, humidity FROM humidity_data
+            ORDER BY timestamp DESC
+            LIMIT 168  -- Get last 7 days of hourly data
+            ''')
+            
+            history = cursor.fetchall()
+            if not history:
+                raise ValueError("No historical humidity data available for predictions")
+            
+            historical_humidity = np.array([record[1] for record in history], dtype=np.float32)
+            
+            # Calculate base humidity from recent averages
+            recent_avg = np.mean(historical_humidity[-24:])  # Last 24 hours
+            weekly_avg = np.mean(historical_humidity)  # Weekly average
+            base_humidity = (recent_avg * 0.7 + weekly_avg * 0.3)  # Weighted average
+            
+            hourly_predictions = []
+            timestamps = []
+            
+            # Add seasonal and daily variations for humidity
+            day_of_year = start_time.timetuple().tm_yday
+            seasonal_factor = np.cos(2 * np.pi * day_of_year / 365) * 5.0  # Seasonal humidity variation
+            
+            # Generate predictions for each hour
+            for hour in range(24):
+                timestamp = start_time + timedelta(hours=hour)
+                # Humidity typically inversely related to temperature (higher at night)
+                hour_factor = np.sin(2 * np.pi * ((hour - 6) / 24))  # Peak humidity around 6 AM
+                daily_variation = 10.0 * hour_factor
+                noise = np.random.normal(0, 1.0)
+                humidity = base_humidity + daily_variation + seasonal_factor + noise
+                
+                # Clamp humidity between 0 and 100%
+                humidity = max(0, min(100, humidity))
+                
+                try:
+                    cursor.execute('''
+                    INSERT INTO humidity_predictions 
+                    (prediction_date, target_date, hour, humidity, latitude, longitude)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (datetime.now().isoformat(), timestamp.isoformat(), hour, humidity, 
+                         DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+                    
+                    hourly_predictions.append(float(humidity))
+                    timestamps.append(timestamp.isoformat())
+                    
+                except sqlite3.OperationalError as e:
+                    if "database is locked" in str(e):
+                        print(f"Database locked, retrying hour {hour}")
+                        time.sleep(0.1)
+                        continue
+                    raise
+            
+            # Commit all predictions
+            conn.commit()
+            print(f"Successfully stored {len(hourly_predictions)} hourly humidity predictions for day {day}")
+            
+            return {
+                "day": day,
+                "date": start_time.strftime("%Y-%m-%d"),
+                "day_of_week": start_time.strftime("%A"),
+                "timestamps": timestamps,
+                "predictions": hourly_predictions,
+                "min_humidity": min(hourly_predictions) if hourly_predictions else None,
+                "max_humidity": max(hourly_predictions) if hourly_predictions else None,
+                "avg_humidity": sum(hourly_predictions) / len(hourly_predictions) if hourly_predictions else None
+            }
+            
+        except Exception as e:
+            print(f"Error making humidity predictions for day {day}: {str(e)}")
+            raise
+            
+    except Exception as e:
+        print(f"Error in predict_humidity_for_day: {str(e)}")
+        raise
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+@app.route('/api/humidity/weekly-stats', methods=['GET'])
+def get_humidity_weekly_stats():
+    try:
+        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        time_threshold = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M')
+        
+        cursor.execute('''
+        SELECT * FROM humidity_data
+        WHERE latitude = ? AND longitude = ? AND timestamp >= ?
+        ORDER BY timestamp ASC
+        ''', (latitude, longitude, time_threshold))
+        
+        all_data = cursor.fetchall()
+        conn.close()
+        
+        if not all_data:
+            generate_mock_data()
+            
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT * FROM humidity_data
+            WHERE latitude = ? AND longitude = ? AND timestamp >= ?
+            ORDER BY timestamp ASC
+            ''', (latitude, longitude, time_threshold))
+            all_data = cursor.fetchall()
+            conn.close()
+        
+        # Convert to DataFrame with standardized timestamps
+        df = pd.DataFrame([{
+            'timestamp': standardize_timestamp(row['timestamp']),
+            'humidity': row['humidity']
+        } for row in all_data])
+        
+        df['timestamp'] = pd.to_datetime(df['timestamp'], format='%Y-%m-%d %H:%M')
+        df['date'] = df['timestamp'].dt.strftime('%Y-%m-%d')
+        
+        if len(df) > 0:
+            grouped = df.groupby('date').agg({
+                'humidity': ['min', 'max', 'mean']
+            }).reset_index()
+            grouped.columns = ['date', 'min_humidity', 'max_humidity', 'avg_humidity']
+            dates = grouped['date'].tolist()
+            min_humidities = grouped['min_humidity'].tolist()
+            max_humidities = grouped['max_humidity'].tolist()
+            avg_humidities = grouped['avg_humidity'].tolist()
+        else:
+            dates = []
+            min_humidities = []
+            max_humidities = []
+            avg_humidities = []
+
+        return jsonify({
+            "dates": dates,
+            "minHumidities": min_humidities,
+            "maxHumidities": max_humidities,
+            "avgHumidities": avg_humidities
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "dates": [],
+            "minHumidities": [],
+            "maxHumidities": [],
+            "avgHumidities": []
         })
 
 @app.after_request
