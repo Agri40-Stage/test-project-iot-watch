@@ -100,6 +100,7 @@ const Content = () => {
           temperature={latestTemperature}
           trend={temperatureTrend}
         />
+        
 
         <TemperatureChart
           chartData={temperatureData}

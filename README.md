@@ -112,6 +112,7 @@ Activer l'environnement virtuel :
    PORT=5000
    DATABASE_PATH=temperature.db
    DEBUG=True
+   GEMINI_API_KEY=YOUR-gemini-api-key
    ```
 
 5. Lancer l'application Flask :

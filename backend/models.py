@@ -109,8 +109,8 @@ def load_prediction_model():
     # Define possible model paths
     model_dir = os.path.join(os.path.dirname(__file__), 'model')
     possible_paths = [
-        os.path.join(model_dir, 'ml.keras'),
-        os.path.join(os.path.dirname(__file__), 'ml.keras')
+        os.path.join(model_dir, 'ml.h5'),
+        os.path.join(os.path.dirname(__file__), 'ml.h5'),
     ]
     
     print(f"Attempting to load model from possible paths:")

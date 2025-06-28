@@ -43,6 +43,7 @@ const TemperatureCrad = ({ time, temperature, trend }) => {
           </div>
         )}
       </div>
+      
     </div>
   );
 };
