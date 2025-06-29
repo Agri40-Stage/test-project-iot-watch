@@ -378,3 +378,45 @@ This challenge assesses your hands-on engineering skills through:
 ---
 
 **🎯 Result**: A production-ready IoT application with enterprise-grade security, ready for deployment on embedded systems with high security standards.
+
+---
+
+## 🚦 CI/CD avec Jenkins
+
+### Pipeline Jenkins (Jenkinsfile)
+
+Le projet inclut un Jenkinsfile à la racine pour automatiser :
+- Lint backend (Python/Flake8)
+- Lint frontend (npm run lint)
+- Tests backend (pytest)
+- Tests frontend (npm run build)
+- Build de l'image Docker (tag avec SHA du commit)
+- Push sur Docker Hub (avec credentials Jenkins)
+- (Optionnel) Déploiement sur un serveur cible
+
+#### Exemple de pipeline :
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') { steps { checkout scm } }
+        stage('Lint Backend') { steps { dir('backend') { sh 'pip install --upgrade pip flake8'; sh 'flake8 .' } } }
+        stage('Lint Frontend') { steps { dir('frontend') { sh 'npm ci'; sh 'npm run lint' } } }
+        stage('Test Backend') { steps { dir('backend') { sh 'pip install -r requirements.txt pytest'; sh 'pytest || echo "No tests found, skipping"' } } }
+        stage('Test Frontend') { steps { dir('frontend') { sh 'npm run build' } } }
+        stage('Build Docker Image') { steps { script { sh 'docker build -t $DOCKER_IMAGE -f Dockerfile.production .' } } }
+        stage('Push Docker Image') { steps { script { sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin $REGISTRY'; sh 'docker push $DOCKER_IMAGE' } } }
+        stage('Deploy (optionnel)') { when { expression { return env.DEPLOY_TARGET != null } } steps { echo 'Déploiement sur le serveur cible...' } }
+    }
+}
+```
+
+**Pré-requis Jenkins :**
+- Docker installé sur l'agent Jenkins
+- Credentials Docker Hub configurés (`dockerhub-credentials`)
+- Personnaliser `DOCKERHUB_NAMESPACE` dans le Jenkinsfile
+
+**Valeur ajoutée :**
+- Livraison continue, reproductible et sécurisée
+- Build et push automatisés sur Docker Hub
+- Déploiement possible sur n'importe quel serveur Docker

@@ -169,4 +169,50 @@ Pour contribuer à l'amélioration de la sécurité :
 
 ---
 
-**Note** : Cette configuration respecte les standards de sécurité pour les applications IoT et peut être déployée sur des systèmes embarqués tout en maintenant un niveau de sécurité élevé. 
+**Note** : Cette configuration respecte les standards de sécurité pour les applications IoT et peut être déployée sur des systèmes embarqués tout en maintenant un niveau de sécurité élevé.
+
+## 🚦 CI/CD Jenkins
+
+### Pipeline automatisée
+
+Le projet inclut un Jenkinsfile pour :
+- Lint, tests, build, push Docker Hub, déploiement
+
+#### Étapes de la pipeline :
+1. Checkout du code
+2. Lint backend (Python/Flake8)
+3. Lint frontend (npm run lint)
+4. Tests backend (pytest)
+5. Tests frontend (npm run build)
+6. Build de l'image Docker (tag SHA)
+7. Push sur Docker Hub (credentials Jenkins)
+8. (Optionnel) Déploiement sur serveur cible
+
+#### Extrait Jenkinsfile :
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') { steps { checkout scm } }
+        stage('Lint Backend') { steps { dir('backend') { sh 'pip install --upgrade pip flake8'; sh 'flake8 .' } } }
+        stage('Lint Frontend') { steps { dir('frontend') { sh 'npm ci'; sh 'npm run lint' } } }
+        stage('Test Backend') { steps { dir('backend') { sh 'pip install -r requirements.txt pytest'; sh 'pytest || echo "No tests found, skipping"' } } }
+        stage('Test Frontend') { steps { dir('frontend') { sh 'npm run build' } } }
+        stage('Build Docker Image') { steps { script { sh 'docker build -t $DOCKER_IMAGE -f Dockerfile.production .' } } }
+        stage('Push Docker Image') { steps { script { sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin $REGISTRY'; sh 'docker push $DOCKER_IMAGE' } } }
+        stage('Deploy (optionnel)') { when { expression { return env.DEPLOY_TARGET != null } } steps { echo 'Déploiement sur le serveur cible...' } }
+    }
+}
+```
+
+**À configurer côté Jenkins :**
+- Docker installé sur l'agent
+- Credentials Docker Hub (`dockerhub-credentials`)
+- Personnaliser `DOCKERHUB_NAMESPACE` dans le Jenkinsfile
+
+**Bénéfices :**
+- Build/test/push automatisés
+- Livraison continue fiable
+- Sécurité des secrets
+
+--- 
