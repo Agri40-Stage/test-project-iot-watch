@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  iot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: iot-watch-prod
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - DATABASE_PATH=/app/data/temperature.db
+      - DEBUG=False
+      - FLASK_ENV=production
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-your-secret-key-change-in-production}
+    volumes:
+      - iot_data:/app/data
+      - iot_logs:/app/logs
+    ports:
+      - "80:80"
+      - "5000:5000"
+    networks:
+      - iot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/latest', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /var/tmp
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+volumes:
+  iot_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
+  iot_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs
+
+networks:
+  iot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 
