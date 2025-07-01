@@ -33,10 +33,11 @@ def run_background_services():
         while True:
             try:
                 get_current_temperature()
-                time.sleep(1)
+                print(f"Next temperature update in {UPDATE_INTERVAL_SECONDS} seconds...")
+                time.sleep(UPDATE_INTERVAL_SECONDS) # Use the defined interval
             except Exception as e:
                 print(f"Error in temperature updater: {str(e)}")
-                time.sleep(1)
+                time.sleep(UPDATE_INTERVAL_SECONDS) # Wait before retrying
     
     def scheduler():
         schedule.every().day.at("00:00").do(update_all_predictions)
@@ -56,7 +57,7 @@ def run_background_services():
     temp_thread = threading.Thread(target=temperature_updater)
     temp_thread.daemon = True
     temp_thread.start()
-    print("Background temperature updates started (every second)")
+    print(f"Background temperature updates started (every {UPDATE_INTERVAL_SECONDS} seconds)")
   
     # Start scheduler in a background thread
     scheduler_thread = threading.Thread(target=scheduler)
@@ -116,7 +117,7 @@ def get_latest_temperature():
         
         # Calculate trend
         trend = "stable"
-        if prev_hour_avg and hour_stats:
+        if prev_hour_avg and hour_stats and prev_hour_avg['avg_temp'] is not None and hour_stats['avg_temp'] is not None:
             if hour_stats['avg_temp'] > prev_hour_avg['avg_temp']:
                 trend = "up"
             elif hour_stats['avg_temp'] < prev_hour_avg['avg_temp']:
@@ -125,7 +126,7 @@ def get_latest_temperature():
         return jsonify({
             "time": latest['timestamp'],
             "temperature": float(latest['temperature']),
-            "current_hour_avg": float(hour_stats['avg_temp']) if hour_stats else None,
+            "current_hour_avg": float(hour_stats['avg_temp']) if hour_stats and hour_stats['avg_temp'] is not None else None,
             "readings_this_hour": hour_stats['count'] if hour_stats else 0,
             "trend": trend,
             "is_live": True
@@ -181,7 +182,7 @@ def get_temperature_history():
         return jsonify({
             "lastTimestamps": timestamps,
             "lastTemperatures": temperatures,
-            "updateInterval": 1,
+            "updateInterval": UPDATE_INTERVAL_SECONDS,
             "count": len(readings),
             "isHourlyAverage": False
         })
@@ -552,7 +553,7 @@ def add_header(response):
 @app.route('/<path:path>')
 def serve(path):
     """Serve React app files from frontend/ReactApp directory"""
-    static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'ReactApp', 'dist')
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'dist')
     
     if path and os.path.exists(os.path.join(static_dir, path)):
         return send_from_directory(static_dir, path)

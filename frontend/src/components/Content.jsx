@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 /* Components */
 import TemperatureCrad from "../components/TemperatureCrad";
 import TemperatureChart from "../components/TemperatureChart";
-import Header from "../components/Header";
 
 /* API */
 import fetchLatestTemperature from "../api/latest";
@@ -24,33 +23,31 @@ const Content = () => {
         data: [],
         fill: false,
         borderColor: "#ff811f",
-        tension: 0.1
-      }
+        tension: 0.1,
+      },
     ],
     options: {
       responsive: true,
       maintainAspectRatio: false,
-    }
+    },
   });
 
-  // Function to fetch the latest temperature
+  // Function to fetch the latest temperature from our backend
   const getLatestTemperature = async () => {
     try {
       const data = await fetchLatestTemperature();
-
       setLatestTemperatureTime(data.time);
       setLatestTemperature(data.temperature);
       setTemperatureTrend(data.trend);
     } catch (error) {
       console.error("Error getting latest temperature: ", error);
     }
-  }
+  };
 
-  // Function to fetch the temperature history for the last 10 hours
+  // Function to fetch the temperature history from our backend
   const getTemperatureHistory = async () => {
     try {
       const data = await fetchTemperatureHistory();
-
       setTemperatureData({
         labels: data.lastTimestamps,
         datasets: [
@@ -66,9 +63,9 @@ const Content = () => {
     } catch (error) {
       console.error("Error getting temperature history: ", error);
     }
-  }
+  };
 
-  // Auto-refresh every 10 seconds
+  // Auto-refresh every 5 seconds
   useEffect(() => {
     getLatestTemperature();
     getTemperatureHistory();
@@ -76,21 +73,18 @@ const Content = () => {
     const interval = setInterval(() => {
       getLatestTemperature();
       getTemperatureHistory();
-    }, 10000);
+    }, 5000); // Poll our backend more frequently for a near-real-time feel
 
     return () => clearInterval(interval);
   }, []);
 
-
   return (
-    
-    <div className="flex flex-col gap-8 py-12 px-6">
+    <div className="flex flex-col gap-8">
       <div className="w-full flex flex-col gap-2 text-left">
-        <h1 className="font-bold text-3xl">
-          Temperature Dashboard
-        </h1>
+        <h1 className="font-bold text-3xl">Temperature Dashboard</h1>
         <p className="text-sm font-light text-gray-400">
-          Monitor real-time temperature data and historical trends
+          Monitor real-time temperature data and historical trends from our own
+          backend service.
         </p>
       </div>
 
@@ -107,7 +101,7 @@ const Content = () => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Content;
