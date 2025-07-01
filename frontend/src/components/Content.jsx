@@ -81,8 +81,10 @@ const Content = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="w-full flex flex-col gap-2 text-left">
-        <h1 className="font-bold text-3xl">Temperature Dashboard</h1>
-        <p className="text-sm font-light text-gray-400">
+        <h1 className="font-bold text-3xl text-gray-900 dark:text-gray-100">
+          Temperature Dashboard
+        </h1>
+        <p className="text-sm font-light text-gray-400 dark:text-gray-300">
           Monitor real-time temperature data and historical trends from our own
           backend service.
         </p>

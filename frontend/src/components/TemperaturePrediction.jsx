@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -8,9 +8,9 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import { API_BASE_URL } from '../config';
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+import { API_BASE_URL } from "../config";
 
 // Register ChartJS components
 ChartJS.register(
@@ -23,64 +23,102 @@ ChartJS.register(
   Legend
 );
 
+// Helper to get initial dark mode state
+const getInitialDark = () => {
+  if (localStorage.getItem("theme")) {
+    return localStorage.getItem("theme") === "dark";
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
 const TemperaturePrediction = () => {
   const [predictionData, setPredictionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState("");
   const [predictionDay, setPredictionDay] = useState(1);
+  const [isDark, setIsDark] = useState(getInitialDark());
+
+  // Listen for changes to the body's class (dark mode toggle)
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.body.classList.contains("dark"));
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const fetchPredictions = async () => {
     try {
       setLoading(true);
-      console.log(`Fetching predictions from: ${API_BASE_URL}/api/predict?day=${predictionDay}`);
-      setDebugInfo(`Attempting to fetch from: ${API_BASE_URL}/api/predict?day=${predictionDay}`);
-      
-      const response = await fetch(`${API_BASE_URL}/api/predict?day=${predictionDay}`);
-      
+      console.log(
+        `Fetching predictions from: ${API_BASE_URL}/api/predict?day=${predictionDay}`
+      );
+      setDebugInfo(
+        `Attempting to fetch from: ${API_BASE_URL}/api/predict?day=${predictionDay}`
+      );
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/predict?day=${predictionDay}`
+      );
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+        throw new Error(
+          `HTTP error! Status: ${response.status}, Response: ${errorText}`
+        );
       }
-      
+
       const data = await response.json();
       console.log("Prediction data received:", data);
-      
+
       if (data.error) {
         setError(data.error);
         setPredictionData(null);
-        setDebugInfo(prev => prev + `\nError from API: ${data.error}`);
+        setDebugInfo((prev) => prev + `\nError from API: ${data.error}`);
       } else {
         setPredictionData(data);
         setError(null);
-        setDebugInfo(prev => prev + "\nData received successfully");
+        setDebugInfo((prev) => prev + "\nData received successfully");
       }
     } catch (err) {
       console.error("Error fetching predictions:", err);
       setError(`Failed to load temperature predictions: ${err.message}`);
-      setDebugInfo(prev => prev + `\nError: ${err.message}`);
-      
+      setDebugInfo((prev) => prev + `\nError: ${err.message}`);
+
       // Try to initialize the database or insert mock data if the backend is running but lacks data
       if (err.message.includes("Not enough historical data")) {
         try {
-          setDebugInfo(prev => prev + "\nAttempting to insert mock data...");
-          const mockDataResponse = await fetch(`${API_BASE_URL}/api/insert-mock-data`, {
-            method: 'POST'
-          });
-          
+          setDebugInfo((prev) => prev + "\nAttempting to insert mock data...");
+          const mockDataResponse = await fetch(
+            `${API_BASE_URL}/api/insert-mock-data`,
+            {
+              method: "POST",
+            }
+          );
+
           if (mockDataResponse.ok) {
-            setDebugInfo(prev => prev + "\nMock data inserted successfully. Retrying prediction...");
-            
+            setDebugInfo(
+              (prev) =>
+                prev +
+                "\nMock data inserted successfully. Retrying prediction..."
+            );
+
             // Wait a moment for the database to be updated
             setTimeout(() => {
-              setDebugInfo(prev => prev + "\nRetrying prediction fetch...");
+              setDebugInfo((prev) => prev + "\nRetrying prediction fetch...");
               fetchPredictions();
             }, 1000);
           } else {
-            setDebugInfo(prev => prev + "\nFailed to insert mock data");
+            setDebugInfo((prev) => prev + "\nFailed to insert mock data");
           }
         } catch (mockErr) {
-          setDebugInfo(prev => prev + `\nError inserting mock data: ${mockErr.message}`);
+          setDebugInfo(
+            (prev) => prev + `\nError inserting mock data: ${mockErr.message}`
+          );
         }
       }
     } finally {
@@ -90,12 +128,12 @@ const TemperaturePrediction = () => {
 
   useEffect(() => {
     fetchPredictions();
-    
+
     // Refresh predictions every 30 minutes
     const interval = setInterval(() => {
       fetchPredictions();
     }, 30 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [predictionDay]);
 
@@ -106,10 +144,12 @@ const TemperaturePrediction = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-600 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Loading predictions...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading predictions...
+          </p>
         </div>
       </div>
     );
@@ -126,13 +166,13 @@ const TemperaturePrediction = () => {
         {
           label: `Day ${predictionData.day} Predictions`,
           data: predictionData.predictions,
-          borderColor: '#ff811f',
-          backgroundColor: 'rgba(255, 129, 31, 0.1)',
+          borderColor: "#ff811f",
+          backgroundColor: "rgba(255, 129, 31, 0.1)",
           borderWidth: 2,
           tension: 0.4,
           fill: true,
-          pointBackgroundColor: '#ff811f',
-          pointBorderColor: '#fff',
+          pointBackgroundColor: "#ff811f",
+          pointBorderColor: "#fff",
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
@@ -146,87 +186,99 @@ const TemperaturePrediction = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: "top",
         labels: {
           usePointStyle: true,
           padding: 20,
           font: {
             size: 12,
-            weight: '500'
-          }
-        }
+            weight: "500",
+          },
+          color: isDark ? "#f1f5f9" : "#1f2937",
+        },
       },
       tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#1f2937',
-        bodyColor: '#1f2937',
-        borderColor: '#e5e7eb',
+        backgroundColor: isDark
+          ? "rgba(31, 41, 55, 0.9)"
+          : "rgba(255, 255, 255, 0.9)",
+        titleColor: isDark ? "#f1f5f9" : "#1f2937",
+        bodyColor: isDark ? "#f1f5f9" : "#1f2937",
+        borderColor: isDark ? "#4b5563" : "#e5e7eb",
         borderWidth: 1,
         padding: 12,
         displayColors: true,
         usePointStyle: true,
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             return `Predicted: ${context.parsed.y}°C`;
           },
           title: (tooltipItems) => {
             const index = tooltipItems[0].dataIndex;
             return new Date(predictionData?.timestamps[index]).toLocaleString();
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       x: {
         grid: {
-          display: false
+          display: false,
         },
         ticks: {
-          color: '#6b7280',
+          color: isDark ? "#9ca3af" : "#6b7280",
           font: {
-            size: 11
-          }
-        }
+            size: 11,
+          },
+        },
       },
       y: {
         grid: {
-          color: '#e5e7eb'
+          color: isDark ? "#374151" : "#e5e7eb",
         },
         ticks: {
-          color: '#6b7280',
+          color: isDark ? "#9ca3af" : "#6b7280",
           font: {
-            size: 11
+            size: 11,
           },
-          callback: function(value) {
-            return value + '°C';
-          }
+          callback: function (value) {
+            return value + "°C";
+          },
         },
         title: {
           display: true,
-          text: 'Temperature (°C)',
-          color: '#6b7280',
+          text: "Temperature (°C)",
+          color: isDark ? "#9ca3af" : "#6b7280",
           font: {
             size: 12,
-            weight: '500'
-          }
-        }
-      }
-    }
+            weight: "500",
+          },
+        },
+      },
+    },
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-600 p-6 hover:shadow-md transition-shadow duration-200 h-full">
       <div className="mb-4 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Temperature Prediction</h2>
-          <p className="text-sm font-medium text-gray-500">5-Day Hourly Temperature Forecast</p>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+            Temperature Prediction
+          </h2>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            5-Day Hourly Temperature Forecast
+          </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <label htmlFor="daySelect" className="text-sm font-medium text-gray-600">Day to predict:</label>
-          <select 
+          <label
+            htmlFor="daySelect"
+            className="text-sm font-medium text-gray-600 dark:text-gray-300"
+          >
+            Day to predict:
+          </label>
+          <select
             id="daySelect"
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+            className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
             value={predictionDay}
             onChange={(e) => setPredictionDay(parseInt(e.target.value))}
           >
@@ -238,20 +290,32 @@ const TemperaturePrediction = () => {
           </select>
         </div>
       </div>
-      
+
       {error || !predictionData ? (
         <div className="flex flex-col items-center justify-center h-[300px]">
           <div className="text-red-500 mb-2 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             {error || "No prediction data available"}
           </div>
-          <details className="text-xs text-gray-500 mt-2 p-2 border rounded bg-gray-50">
-            <summary className="cursor-pointer hover:text-gray-700">Debug Information</summary>
+          <details className="text-xs text-gray-500 dark:text-gray-400 mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+            <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-200">
+              Debug Information
+            </summary>
             <pre className="whitespace-pre-wrap mt-2">{debugInfo}</pre>
           </details>
-          <button 
+          <button
             className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors duration-200 shadow-sm"
             onClick={fetchPredictions}
           >
@@ -267,4 +331,4 @@ const TemperaturePrediction = () => {
   );
 };
 
-export default TemperaturePrediction; 
+export default TemperaturePrediction;
