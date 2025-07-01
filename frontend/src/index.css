@@ -1,12 +1,11 @@
-@import "tailwindcss";
-
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: #242424;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -16,10 +15,11 @@
 
 a {
   font-weight: 500;
+  color: #646cff;
   text-decoration: inherit;
 }
 a:hover {
-  color: #47e78a;
+  color: #535bf2;
 }
 
 body {
@@ -30,6 +30,11 @@ body {
   min-height: 100vh;
 }
 
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -37,7 +42,7 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  /* background-color: #1a1a1a; */
+  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -50,28 +55,14 @@ button:focus-visible {
 }
 
 @media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
   a:hover {
     color: #747bff;
   }
   button {
     background-color: #f9f9f9;
   }
-}
-
-body.dark {
-  background-color: #18181b;
-  color: #f1f5f9;
-}
-
-body.dark .bg-white {
-  background-color: #27272a !important;
-}
-
-body.dark .bg-zinc-50 {
-  background-color: #18181b !important;
-}
-
-body.dark .text-gray-400,
-body.dark .text-gray-500 {
-  color: #a1a1aa !important;
 }
