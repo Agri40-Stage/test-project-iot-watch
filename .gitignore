@@ -1,0 +1,18 @@
+# Ignore Python venv
+backend/iot-env/
+
+# Node modules
+frontend/node_modules/
+
+# SQLite DB files
+*.db
+
+# __pycache__
+__pycache__/
+
+# VSCode / PyCharm folders
+.vscode/
+.idea/
+
+# Logs
+*.log
