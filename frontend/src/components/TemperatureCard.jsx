@@ -4,18 +4,20 @@ import PropTypes from "prop-types";
 /* Icons */
 import { ArrowDownIcon, ArrowUpIcon, ThermometerIcon } from "lucide-react";
 
-const TemperatureCrad = ({ time, temperature, trend }) => {
+const TemperatureCard = ({ time, temperature, trend }) => {
   return (
     <div className="flex flex-col gap-6 max-w-96 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
       <div className="flex justify-between items-center gap-4">
         <div className="w-full flex flex-col gap-2 text-left">
-          <h2 className="text-xl font-medium leading-none">Current Temperature</h2>
-          <p className="font-light text-gray-400 text-base leading-none">Live reading from sensor</p>
+          <h2 className="text-xl font-medium leading-none">
+            Current Temperature
+          </h2>
+          <p className="font-light text-gray-400 text-base leading-none">
+            Live reading from sensor
+          </p>
         </div>
 
-        <div className="text-sm text-gray-400 text-nowrap">
-          {time}
-        </div>
+        <div className="text-sm text-gray-400 text-nowrap">{time}</div>
       </div>
 
       <div className="flex flex-col items-center justify-center py-6">
@@ -47,10 +49,10 @@ const TemperatureCrad = ({ time, temperature, trend }) => {
   );
 };
 
-TemperatureCrad.PropTypes = {
+TemperatureCard.PropTypes = {
   time: PropTypes.string.isRequired,
   temperature: PropTypes.number.isRequired,
-  trend: PropTypes.oneOf(["up","down","stable"]).isRequired,
+  trend: PropTypes.oneOf(["up", "down", "stable"]).isRequired,
 };
 
-export default TemperatureCrad;
+export default TemperatureCard;

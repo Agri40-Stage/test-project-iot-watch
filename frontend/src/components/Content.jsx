@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 /* Components */
-import TemperatureCrad from "../components/TemperatureCrad";
+import TemperatureCard from "../components/TemperatureCard";
 import TemperatureChart from "../components/TemperatureChart";
 
 /* API */
@@ -89,7 +89,7 @@ const Content = () => {
       </div>
 
       <div className="grid gap-4 grid-cols-1 xl:grid-cols-[384px_1fr]">
-        <TemperatureCrad
+        <TemperatureCard
           time={latestTemperatureTime}
           temperature={latestTemperature}
           trend={temperatureTrend}
