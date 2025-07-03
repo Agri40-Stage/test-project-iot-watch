@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-toastify';
 
 /* Components */
 import Content from '../components/Content';
@@ -15,6 +16,7 @@ function Temperature(){
       <WeeklyStats /> */}
     </div>
     )
+    
 }
 
 export default Temperature;
