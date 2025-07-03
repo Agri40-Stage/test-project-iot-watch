@@ -72,6 +72,13 @@ function Header() {
                     <div className="flex flex-col space-y-2 mt-4">
                         <button className="bg-green-500 rounded-b-xl text-white px-4 py-2">Say Hello!</button>
                         <button className="bg-green-400 rounded-b-xl text-white px-4 py-2">Contact Us!</button>
+                        <button
+                            className="ml-2 p-1 rounded-full border text-green-500 hover:bg-green-50 transition mt-4"
+                            onClick={() => setDark((d) => !d)}
+                            aria-label="Toggle dark mode"
+                            >
+                            {dark ? <FiSun size={18} /> : <FiMoon size={18} />}
+                        </button>
                     </div>
                 </div>
             )}
