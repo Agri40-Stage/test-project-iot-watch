@@ -72,6 +72,14 @@ function Header() {
                     <div className="flex flex-col space-y-2 mt-4">
                         <button className="bg-green-500 rounded-b-xl text-white px-4 py-2">Say Hello!</button>
                         <button className="bg-green-400 rounded-b-xl text-white px-4 py-2">Contact Us!</button>
+                         {/* AJOUTER ICI LE BOUTON DARK MODE POUR MOBILE */}
+                        <button
+                            className="ml-2 p-2 rounded-full border-2 border-green-500 text-green-500 hover:bg-green-50 transition mt-4"
+                            onClick={() => setDark((d) => !d)}
+                            aria-label="Toggle dark mode"
+                        >
+                            {dark ? <FiSun size={22} /> : <FiMoon size={22} />}
+                        </button>
                     </div>
                 </div>
             )}
