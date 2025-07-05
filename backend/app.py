@@ -12,6 +12,8 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+from services.stats_calculator import calculate_weekly_stats, get_temperature_trends
+from services.data_validator import clean_historical_data
 
 load_dotenv()
 app = Flask(__name__)
@@ -194,67 +196,27 @@ def get_temperature_history():
 
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
+    print("dccccccccccc")
+    """Get comprehensive weekly temperature statistics"""
     try:
-        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
-        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        latitude = float(request.args.get('latitude', DEFAULT_LATITUDE))
+        longitude = float(request.args.get('longitude', DEFAULT_LONGITUDE))
         
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # Calculate weekly statistics
+        stats = calculate_weekly_stats(latitude, longitude)
+        print(stats)
+        # Add trend information
+        trends = get_temperature_trends()
+        stats['trends'] = trends
         
-        time_threshold = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M')
+        # Add metadata
+        stats['last_updated'] = datetime.now().isoformat()
+        stats['location'] = {
+            "latitude": latitude,
+            "longitude": longitude
+        }
         
-        cursor.execute('''
-        SELECT * FROM temperature_data
-        WHERE latitude = ? AND longitude = ? AND timestamp >= ?
-        ORDER BY timestamp ASC
-        ''', (latitude, longitude, time_threshold))
-        
-        all_data = cursor.fetchall()
-        conn.close()
-        
-        if not all_data:
-            generate_mock_data()
-            
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-            SELECT * FROM temperature_data
-            WHERE latitude = ? AND longitude = ? AND timestamp >= ?
-            ORDER BY timestamp ASC
-            ''', (latitude, longitude, time_threshold))
-            all_data = cursor.fetchall()
-            conn.close()
-        
-        # Convert to DataFrame with standardized timestamps
-        df = pd.DataFrame([{
-            'timestamp': standardize_timestamp(row['timestamp']),
-            'temperature': row['temperature']
-        } for row in all_data])
-        
-        df['timestamp'] = pd.to_datetime(df['timestamp'], format='%Y-%m-%d %H:%M')
-        df['date'] = df['timestamp'].dt.strftime('%Y-%m-%d')
-        
-        if len(df) > 0:
-            grouped = df.groupby('date').agg({
-                'temperature': ['min', 'max', 'mean']
-            }).reset_index()
-            grouped.columns = ['date', 'min_temp', 'max_temp', 'avg_temp']
-            dates = grouped['date'].tolist()
-            min_temps = grouped['min_temp'].tolist()
-            max_temps = grouped['max_temp'].tolist()
-            avg_temps = grouped['avg_temp'].tolist()
-        else:
-            dates = []
-            min_temps = []
-            max_temps = []
-            avg_temps = []
-
-        return jsonify({
-            "dates": dates,
-            "minTemps": min_temps,
-            "maxTemps": max_temps,
-            "avgTemps": avg_temps
-        })
+        return jsonify(stats)
         
     except Exception as e:
         import traceback
@@ -539,6 +501,18 @@ def get_forecast():
             "error": str(e)
         })
 
+@app.route('/api/validate-data', methods=['POST'])
+def validate_data():
+    """Clean and validate temperature data"""
+    try:
+        result = clean_historical_data()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
+
 @app.after_request
 def add_header(response):
     """Add headers to prevent caching for real-time data"""
@@ -561,4 +535,4 @@ def serve(path):
 
 if __name__ == "__main__":
     run_background_services()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0",debug=True, port=5000)
