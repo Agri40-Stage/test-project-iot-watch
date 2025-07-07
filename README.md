@@ -26,6 +26,20 @@ This challenge also assesses your hands-on engineering skills through the follow
 - Create a clear and relevant GitHub Issue, describing a problem or suggesting an improvement
 ---
 
+### Commit Prefixes (Conventional Commits)
+
+Each commit must start with a clear prefix:
+
+| Prefix     | Meaning                                 |
+|------------|-----------------------------------------|
+| feat:      | Adding a new feature                    |
+| fix:       | Bug fix                                 |
+| docs:      | Documentation changes                   |
+| refactor:  | Code refactoring                        |
+| test:      | Adding or modifying tests               |
+| chore:     | Configuration or dependency changes     |
+| ci:        | Continuous integration changes          |
+
 ## ⚙️ Stack Suggestions
 
 ### Backend
