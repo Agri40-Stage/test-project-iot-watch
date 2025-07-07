@@ -51,6 +51,23 @@ def init_db():
     ''')
     
     cursor.execute('''
+    CREATE TABLE IF NOT EXISTS weather_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        temperature REAL NOT NULL,
+        humidity REAL,
+        precipitation REAL,
+        wind_speed REAL,
+        uv_index REAL,
+        pressure REAL,
+        cloud_cover REAL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        UNIQUE(timestamp, latitude, longitude)
+    )
+    ''')
+    
+    cursor.execute('''
     CREATE TABLE IF NOT EXISTS temperature_predictions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         prediction_date TEXT NOT NULL,

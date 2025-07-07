@@ -86,10 +86,10 @@ const Content = () => {
     
     <div className="flex flex-col gap-8 py-12 px-6">
       <div className="w-full flex flex-col gap-2 text-left">
-        <h1 className="font-bold text-3xl">
+        <h1 className="font-bold text-3xl text-gray-900 dark:text-white">
           Temperature Dashboard
         </h1>
-        <p className="text-sm font-light text-gray-400">
+        <p className="text-sm font-light text-gray-400 dark:text-gray-500">
           Monitor real-time temperature data and historical trends
         </p>
       </div>

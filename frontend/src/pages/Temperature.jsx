@@ -8,7 +8,7 @@ import Header from '../components/Header';
 
 function Temperature(){
     return(
-        <div className="w-screen max-w-screen min-h-screen bg-zinc-50">
+        <div className="w-screen max-w-screen min-h-screen bg-zinc-50 dark:bg-gray-900">
       <Header />
       <Content />
       {/* <TemperaturePrediction />

@@ -37,7 +37,6 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  /* background-color: #1a1a1a; */
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -58,20 +57,403 @@ button:focus-visible {
   }
 }
 
+/* Dark mode styles - using Tailwind classes instead of custom CSS */
 body.dark {
   background-color: #18181b;
   color: #f1f5f9;
 }
 
+/* Force dark mode text colors when dark class is present */
+body.dark .text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+body.dark .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+body.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+body.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+body.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+body.dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+/* Force dark mode backgrounds */
 body.dark .bg-white {
-  background-color: #27272a !important;
+  background-color: #1e293b !important;
 }
 
 body.dark .bg-zinc-50 {
-  background-color: #18181b !important;
+  background-color: #0f172a !important;
 }
 
-body.dark .text-gray-400,
+body.dark .bg-gray-50 {
+  background-color: #1e293b !important;
+}
+
+body.dark .bg-gray-100 {
+  background-color: #334155 !important;
+}
+
+body.dark .bg-gray-200 {
+  background-color: #475569 !important;
+}
+
+body.dark .bg-gray-300 {
+  background-color: #64748b !important;
+}
+
+body.dark .bg-gray-400 {
+  background-color: #94a3b8 !important;
+}
+
+body.dark .bg-gray-500 {
+  background-color: #cbd5e1 !important;
+}
+
+body.dark .bg-gray-600 {
+  background-color: #e2e8f0 !important;
+}
+
+body.dark .bg-gray-700 {
+  background-color: #f1f5f9 !important;
+}
+
+body.dark .bg-gray-800 {
+  background-color: #f8fafc !important;
+}
+
+body.dark .bg-gray-900 {
+  background-color: #ffffff !important;
+}
+
+/* Fix button styling in light mode */
+.bg-green-400 {
+  background-color: #34d399 !important;
+}
+
+.bg-green-500 {
+  background-color: #10b981 !important;
+}
+
+.bg-green-600 {
+  background-color: #059669 !important;
+}
+
+.bg-green-700 {
+  background-color: #047857 !important;
+}
+
+.bg-green-800 {
+  background-color: #065f46 !important;
+}
+
+.bg-blue-500 {
+  background-color: #3b82f6 !important;
+}
+
+.bg-blue-600 {
+  background-color: #2563eb !important;
+}
+
+.bg-blue-700 {
+  background-color: #1d4ed8 !important;
+}
+
+.bg-blue-800 {
+  background-color: #1e40af !important;
+}
+
+.bg-red-500 {
+  background-color: #ef4444 !important;
+}
+
+.bg-red-600 {
+  background-color: #dc2626 !important;
+}
+
+.bg-red-700 {
+  background-color: #b91c1c !important;
+}
+
+.bg-red-800 {
+  background-color: #991b1b !important;
+}
+
+/* Ensure button text stays white in both modes */
+.text-white {
+  color: #ffffff !important;
+}
+
+/* Fix hover states for buttons in light mode */
+.hover\:bg-green-500:hover {
+  background-color: #10b981 !important;
+}
+
+.hover\:bg-green-600:hover {
+  background-color: #059669 !important;
+}
+
+.hover\:bg-green-700:hover {
+  background-color: #047857 !important;
+}
+
+.hover\:bg-green-800:hover {
+  background-color: #065f46 !important;
+}
+
+.hover\:bg-blue-600:hover {
+  background-color: #2563eb !important;
+}
+
+.hover\:bg-blue-700:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.hover\:bg-blue-800:hover {
+  background-color: #1e40af !important;
+}
+
+.hover\:bg-red-600:hover {
+  background-color: #dc2626 !important;
+}
+
+.hover\:bg-red-700:hover {
+  background-color: #b91c1c !important;
+}
+
+.hover\:bg-red-800:hover {
+  background-color: #991b1b !important;
+}
+
+/* Fix button styling in dark mode */
+body.dark .bg-green-400 {
+  background-color: #10b981 !important;
+}
+
+body.dark .bg-green-500 {
+  background-color: #059669 !important;
+}
+
+body.dark .bg-green-600 {
+  background-color: #047857 !important;
+}
+
+body.dark .bg-green-700 {
+  background-color: #065f46 !important;
+}
+
+body.dark .bg-green-800 {
+  background-color: #064e3b !important;
+}
+
+body.dark .bg-blue-500 {
+  background-color: #3b82f6 !important;
+}
+
+body.dark .bg-blue-600 {
+  background-color: #2563eb !important;
+}
+
+body.dark .bg-blue-700 {
+  background-color: #1d4ed8 !important;
+}
+
+body.dark .bg-blue-800 {
+  background-color: #1e40af !important;
+}
+
+body.dark .bg-red-500 {
+  background-color: #ef4444 !important;
+}
+
+body.dark .bg-red-600 {
+  background-color: #dc2626 !important;
+}
+
+body.dark .bg-red-700 {
+  background-color: #b91c1c !important;
+}
+
+body.dark .bg-red-800 {
+  background-color: #991b1b !important;
+}
+
+/* Fix hover states for buttons in dark mode */
+body.dark .hover\:bg-green-500:hover {
+  background-color: #059669 !important;
+}
+
+body.dark .hover\:bg-green-600:hover {
+  background-color: #047857 !important;
+}
+
+body.dark .hover\:bg-green-700:hover {
+  background-color: #065f46 !important;
+}
+
+body.dark .hover\:bg-green-800:hover {
+  background-color: #064e3b !important;
+}
+
+body.dark .hover\:bg-blue-600:hover {
+  background-color: #2563eb !important;
+}
+
+body.dark .hover\:bg-blue-700:hover {
+  background-color: #1d4ed8 !important;
+}
+
+body.dark .hover\:bg-blue-800:hover {
+  background-color: #1e40af !important;
+}
+
+body.dark .hover\:bg-red-600:hover {
+  background-color: #dc2626 !important;
+}
+
+body.dark .hover\:bg-red-700:hover {
+  background-color: #b91c1c !important;
+}
+
+body.dark .hover\:bg-red-800:hover {
+  background-color: #991b1b !important;
+}
+
+/* Fix AI analysis and recommendation sections in dark mode */
+body.dark .bg-blue-50 {
+  background-color: #1e3a8a !important;
+}
+
+body.dark .bg-green-50 {
+  background-color: #064e3b !important;
+}
+
+body.dark .bg-red-50 {
+  background-color: #7f1d1d !important;
+}
+
+body.dark .bg-yellow-50 {
+  background-color: #713f12 !important;
+}
+
+body.dark .bg-gray-50 {
+  background-color: #1e293b !important;
+}
+
+/* Fix border colors for recommendation sections */
+body.dark .border-blue-200 {
+  border-color: #1e40af !important;
+}
+
+body.dark .border-green-200 {
+  border-color: #059669 !important;
+}
+
+body.dark .border-red-200 {
+  border-color: #dc2626 !important;
+}
+
+body.dark .border-yellow-200 {
+  border-color: #d97706 !important;
+}
+
+body.dark .border-gray-200 {
+  border-color: #475569 !important;
+}
+
+/* Fix text colors for recommendation sections */
+body.dark .text-blue-800 {
+  color: #dbeafe !important;
+}
+
+body.dark .text-blue-900 {
+  color: #eff6ff !important;
+}
+
+body.dark .text-green-800 {
+  color: #dcfce7 !important;
+}
+
+body.dark .text-green-900 {
+  color: #f0fdf4 !important;
+}
+
+body.dark .text-red-800 {
+  color: #fecaca !important;
+}
+
+body.dark .text-red-900 {
+  color: #fef2f2 !important;
+}
+
+body.dark .text-yellow-800 {
+  color: #fef3c7 !important;
+}
+
+body.dark .text-yellow-900 {
+  color: #fffbeb !important;
+}
+
+/* Fix specific recommendation text colors */
+body.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+body.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
 body.dark .text-gray-500 {
-  color: #a1a1aa !important;
+  color: #94a3b8 !important;
+}
+
+body.dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+/* Fix crop suggestions dropdown styling */
+.crop-suggestions-container {
+  position: relative;
+  z-index: 50;
+}
+
+/* Ensure dropdown doesn't overflow page */
+.absolute.z-50 {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Fix dropdown shadows and borders */
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Crop suggestions dropdown dark mode fix */
+body.dark .crop-suggestions-container .absolute.z-50 {
+  background-color: #23272a !important;
+  border-color: #334155 !important;
+}
+
+body.dark .crop-suggestions-container button {
+  color: #e5e7eb !important; /* Tailwind gray-200 */
+}
+
+body.dark .crop-suggestions-container button:hover,
+body.dark .crop-suggestions-container button:focus {
+  background-color: #334155 !important; /* Tailwind gray-700 */
 }

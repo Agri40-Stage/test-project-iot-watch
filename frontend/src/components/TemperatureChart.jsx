@@ -67,12 +67,12 @@ const TemperatureChart = ({ chartData, chartOptions }) => {
   };
 
   return (
-    <div className="flex flex-col gap-6 lg:col-span-1 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
+    <div className="flex flex-col gap-6 lg:col-span-1 py-8 px-6 rounded-xl border-[0.5px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
       <div className="w-full flex flex-col gap-2 rtext-left">
-        <h2 className="text-xl font-medium leading-none">
+        <h2 className="text-xl font-medium leading-none text-gray-900 dark:text-white">
           Temperature History
         </h2>
-        <p className="font-light text-gray-400 text-base leading-none">
+        <p className="font-light text-gray-400 dark:text-gray-500 text-base leading-none">
           Last 10 temperature readings
         </p>
       </div>

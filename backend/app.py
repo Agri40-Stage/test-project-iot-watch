@@ -11,11 +11,12 @@ from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
+from services.gemini_service import analyze_crop_weather, get_crop_suggestions
 from models import *
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"], supports_credentials=True)
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -431,6 +432,567 @@ def predict_for_day(day):
         except:
             pass
 
+@app.route('/api/crop/analyze', methods=['GET'])
+def analyze_crop():
+    """Analyze weather impact on a specific crop using AI"""
+    try:
+        crop_name = request.args.get('crop', '').strip()
+        if not crop_name:
+            return jsonify({"error": "Crop name is required"}), 400
+        
+        # Get current weather data
+        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get latest comprehensive weather data
+        cursor.execute('''
+        SELECT * FROM weather_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+        ''', (latitude, longitude))
+        
+        weather_data = cursor.fetchone()
+        
+        if weather_data:
+            current_temperature = float(weather_data['temperature'])
+            humidity = float(weather_data['humidity']) if weather_data['humidity'] else None
+            precipitation = float(weather_data['precipitation']) if weather_data['precipitation'] else None
+            wind_speed = float(weather_data['wind_speed']) if weather_data['wind_speed'] else None
+            uv_index = float(weather_data['uv_index']) if weather_data['uv_index'] else None
+            pressure = float(weather_data['pressure']) if weather_data['pressure'] else None
+            cloud_cover = float(weather_data['cloud_cover']) if weather_data['cloud_cover'] else None
+        else:
+            # Fallback to basic temperature data
+            cursor.execute('''
+            SELECT temperature FROM temperature_data
+            WHERE latitude = ? AND longitude = ?
+            ORDER BY timestamp DESC
+            LIMIT 1
+            ''', (latitude, longitude))
+            
+            latest_temp = cursor.fetchone()
+            current_temperature = float(latest_temp['temperature']) if latest_temp else 25.0
+            humidity = None
+            precipitation = None
+            wind_speed = None
+            uv_index = None
+            pressure = None
+            cloud_cover = None
+        
+        # Determine weather condition based on data
+        weather_condition = "Clear"
+        if precipitation and precipitation > 0:
+            weather_condition = "Rainy"
+        elif cloud_cover and cloud_cover > 70:
+            weather_condition = "Cloudy"
+        elif wind_speed and wind_speed > 20:
+            weather_condition = "Windy"
+        
+        # Analyze crop with AI using comprehensive weather data
+        analysis = analyze_crop_weather(
+            crop_name=crop_name,
+            temperature=current_temperature,
+            humidity=humidity,
+            weather_condition=weather_condition,
+            precipitation=precipitation,
+            wind_speed=wind_speed,
+            uv_index=uv_index,
+            pressure=pressure,
+            cloud_cover=cloud_cover
+        )
+        
+        conn.close()
+        
+        return jsonify(analysis)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/crop/suggestions', methods=['GET'])
+def get_crop_suggestions_api():
+    """Get list of common crops for suggestions"""
+    try:
+        suggestions = get_crop_suggestions()
+        return jsonify({"crops": suggestions})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/humidity/history', methods=['GET'])
+def get_humidity_history():
+    """Get humidity data for the past 7 days"""
+    try:
+        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get humidity data for the past 7 days
+        time_threshold = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M')
+        
+        cursor.execute('''
+        SELECT DATE(timestamp) as date, 
+               humidity
+        FROM weather_data
+        WHERE latitude = ? AND longitude = ? AND timestamp >= ?
+        AND humidity IS NOT NULL
+        ORDER BY date ASC, timestamp DESC
+        ''', (latitude, longitude, time_threshold))
+        
+        humidity_data = cursor.fetchall()
+        conn.close()
+        
+        if not humidity_data:
+            # If no data, fetch from Open-Meteo API as fallback
+            try:
+                import requests
+                url = "https://api.open-meteo.com/v1/forecast"
+                params = {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "daily": "relative_humidity_2m_max",
+                    "timezone": "auto",
+                    "past_days": 7
+                }
+                
+                response = requests.get(url, params=params)
+                if response.ok:
+                    data = response.json()
+                    if data.get('daily') and data['daily'].get('time') and data['daily'].get('relative_humidity_2m_max'):
+                        humidity_values = data['daily']['relative_humidity_2m_max'][:7]
+                        dates = data['daily']['time'][:7]
+                        
+                        return jsonify({
+                            "success": True,
+                            "data": [
+                                {
+                                    "date": date,
+                                    "avg_humidity": humidity,
+                                    "max_humidity": humidity,
+                                    "min_humidity": humidity
+                                }
+                                for date, humidity in zip(dates, humidity_values)
+                            ]
+                        })
+            except Exception as e:
+                print(f"Error fetching fallback humidity data: {str(e)}")
+        
+        # Process data to get one humidity value per day (latest reading)
+        daily_humidity = {}
+        for row in humidity_data:
+            date = row['date']
+            humidity = float(row['humidity']) if row['humidity'] else 0
+            # Keep the latest reading for each day
+            if date not in daily_humidity:
+                daily_humidity[date] = humidity
+        
+        # Convert to list and ensure we have 7 days
+        humidity_list = []
+        for i in range(7):
+            target_date = (datetime.now() - timedelta(days=6-i)).strftime('%Y-%m-%d')
+            humidity_list.append({
+                "date": target_date,
+                "humidity": daily_humidity.get(target_date, 0)
+            })
+        
+        # Return database data
+        return jsonify({
+            "success": True,
+            "data": humidity_list
+        })
+        
+    except Exception as e:
+        print(f"Error getting humidity history: {str(e)}")
+        return jsonify({"error": str(e)})
+
+@app.route('/api/weather/refresh', methods=['POST'])
+def refresh_weather_data():
+    """Manually refresh weather data from Open-Meteo API"""
+    try:
+        from services.weather_fetcher import get_current_temperature
+        current_temp = get_current_temperature()
+        return jsonify({
+            "success": True,
+            "message": "Weather data refreshed successfully",
+            "temperature": current_temp
+        })
+    except Exception as e:
+        print(f"Error refreshing weather data: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
+
+@app.route('/api/weather/current', methods=['GET'])
+def get_current_weather():
+    """Get current comprehensive weather data for agriculture"""
+    try:
+        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get latest weather data
+        cursor.execute('''
+        SELECT * FROM weather_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+        ''', (latitude, longitude))
+        
+        weather = cursor.fetchone()
+        conn.close()
+        
+        if not weather:
+            # If no weather data in database, fetch fresh data from Open-Meteo API
+            try:
+                from services.weather_fetcher import get_current_temperature
+                current_temp = get_current_temperature()
+                
+                # Try to get the weather data again after fetching
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                SELECT * FROM weather_data
+                WHERE latitude = ? AND longitude = ?
+                ORDER BY timestamp DESC
+                LIMIT 1
+                ''', (latitude, longitude))
+                
+                weather = cursor.fetchone()
+                conn.close()
+                
+                if not weather:
+                    # If still no weather data, return basic temperature
+                    return jsonify({
+                        "timestamp": datetime.now().isoformat(),
+                        "temperature": current_temp,
+                        "humidity": None,
+                        "precipitation": None,
+                        "wind_speed": None,
+                        "uv_index": None,
+                        "pressure": None,
+                        "cloud_cover": None,
+                        "irrigation_advice": "Weather data not available. Using temperature only."
+                    })
+            except Exception as e:
+                print(f"Error fetching fresh weather data: {str(e)}")
+                return jsonify({
+                    "error": "Unable to fetch weather data",
+                    "timestamp": datetime.now().isoformat(),
+                    "temperature": None,
+                    "humidity": None,
+                    "precipitation": None,
+                    "wind_speed": None,
+                    "uv_index": None,
+                    "pressure": None,
+                    "cloud_cover": None
+                })
+        
+        # Debug: Print the raw weather data
+        print(f"Raw weather data from DB: {dict(weather)}")
+        
+        return jsonify({
+            "timestamp": weather['timestamp'],
+            "temperature": float(weather['temperature']),
+            "humidity": float(weather['humidity']) if weather['humidity'] else None,
+            "precipitation": float(weather['precipitation']) if weather['precipitation'] else None,
+            "wind_speed": float(weather['wind_speed']) if weather['wind_speed'] else None,
+            "uv_index": float(weather['uv_index']) if weather['uv_index'] else None,
+            "pressure": float(weather['pressure']) if weather['pressure'] else None,
+            "cloud_cover": float(weather['cloud_cover']) if weather['cloud_cover'] else None,
+            "irrigation_advice": generate_irrigation_advice(weather)
+        })
+        
+    except Exception as e:
+        print(f"Error getting current weather: {str(e)}")
+        return jsonify({"error": str(e)})
+
+@app.route('/api/irrigation/advice', methods=['GET'])
+def get_irrigation_advice():
+    """Get AI-powered irrigation advice based on current weather conditions"""
+    try:
+        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get latest weather data
+        cursor.execute('''
+        SELECT * FROM weather_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+        ''', (latitude, longitude))
+        
+        weather = cursor.fetchone()
+        conn.close()
+        
+        if not weather:
+            # Try to fetch fresh weather data
+            try:
+                from services.weather_fetcher import get_current_temperature
+                current_temp = get_current_temperature()
+                
+                # Try to get the weather data again after fetching
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                SELECT * FROM weather_data
+                WHERE latitude = ? AND longitude = ?
+                ORDER BY timestamp DESC
+                LIMIT 1
+                ''', (latitude, longitude))
+                
+                weather = cursor.fetchone()
+                conn.close()
+                
+                if not weather:
+                    return jsonify({
+                        "error": "No weather data available for irrigation advice",
+                        "advice": "Please ensure weather data is being collected."
+                    })
+            except Exception as e:
+                print(f"Error fetching fresh weather data for irrigation: {str(e)}")
+                return jsonify({
+                    "error": "Unable to fetch weather data for irrigation advice",
+                    "advice": "Please try again later."
+                })
+        
+        # Generate comprehensive irrigation advice using Gemini AI
+        irrigation_analysis = generate_ai_irrigation_advice(weather)
+        
+        return jsonify({
+            "timestamp": weather['timestamp'],
+            "current_conditions": {
+                "temperature": float(weather['temperature']),
+                "humidity": float(weather['humidity']) if weather['humidity'] else None,
+                "precipitation": float(weather['precipitation']) if weather['precipitation'] else None,
+                "wind_speed": float(weather['wind_speed']) if weather['wind_speed'] else None,
+                "uv_index": float(weather['uv_index']) if weather['uv_index'] else None,
+                "pressure": float(weather['pressure']) if weather['pressure'] else None,
+                "cloud_cover": float(weather['cloud_cover']) if weather['cloud_cover'] else None
+            },
+            "irrigation_advice": {
+                "summary": irrigation_analysis.get("summary", "Weather-based irrigation analysis completed.") if isinstance(irrigation_analysis, dict) else "Weather-based irrigation analysis completed.",
+                "detailed_advice": irrigation_analysis.get("detailed_advice", []) if isinstance(irrigation_analysis, dict) else [],
+                "overall_recommendation": irrigation_analysis.get("overall_recommendation", "NORMAL SCHEDULE") if isinstance(irrigation_analysis, dict) else "NORMAL SCHEDULE",
+                "ai_analysis": irrigation_analysis.get("ai_analysis", "") if isinstance(irrigation_analysis, dict) else ""
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error getting irrigation advice: {str(e)}")
+        return jsonify({"error": str(e)})
+
+def generate_ai_irrigation_advice(weather):
+    """Generate AI-powered irrigation advice using Gemini"""
+    if not weather:
+        return "Weather data not available for irrigation advice."
+    
+    try:
+        from services.gemini_service import analyze_irrigation_weather
+        
+        # Extract weather parameters
+        temp = weather['temperature'] if weather['temperature'] is not None else 0
+        humidity = weather['humidity'] if weather['humidity'] is not None else 0
+        precipitation = weather['precipitation'] if weather['precipitation'] is not None else 0
+        wind_speed = weather['wind_speed'] if weather['wind_speed'] is not None else 0
+        uv_index = weather['uv_index'] if weather['uv_index'] is not None else 0
+        pressure = weather['pressure'] if weather['pressure'] is not None else 0
+        cloud_cover = weather['cloud_cover'] if weather['cloud_cover'] is not None else 0
+        
+        # Get AI-powered irrigation analysis
+        ai_analysis = analyze_irrigation_weather(
+            temperature=temp,
+            humidity=humidity,
+            precipitation=precipitation,
+            wind_speed=wind_speed,
+            uv_index=uv_index,
+            pressure=pressure,
+            cloud_cover=cloud_cover
+        )
+        
+        return ai_analysis
+        
+    except Exception as e:
+        print(f"Error generating AI irrigation advice: {str(e)}")
+        # Fallback to basic logic if AI fails
+        return generate_comprehensive_irrigation_advice(weather)
+
+def generate_comprehensive_irrigation_advice(weather):
+    """Generate comprehensive irrigation advice based on weather conditions"""
+    if not weather:
+        return "Weather data not available for irrigation advice."
+    
+    temp = weather['temperature'] if weather['temperature'] is not None else 0
+    humidity = weather['humidity'] if weather['humidity'] is not None else 0
+    precipitation = weather['precipitation'] if weather['precipitation'] is not None else 0
+    wind_speed = weather['wind_speed'] if weather['wind_speed'] is not None else 0
+    uv_index = weather['uv_index'] if weather['uv_index'] is not None else 0
+    cloud_cover = weather['cloud_cover'] if weather['cloud_cover'] is not None else 0
+    
+    advice_sections = []
+    
+    # Temperature-based advice
+    if temp > 30:
+        advice_sections.append({
+            "factor": "High Temperature",
+            "impact": "High evaporation rates, increased water demand",
+            "recommendation": "Increase irrigation frequency and duration",
+            "priority": "High"
+        })
+    elif temp < 10:
+        advice_sections.append({
+            "factor": "Low Temperature",
+            "impact": "Reduced evaporation, risk of waterlogging",
+            "recommendation": "Reduce irrigation frequency, avoid overwatering",
+            "priority": "Medium"
+        })
+    
+    # Humidity-based advice
+    if humidity < 40:
+        advice_sections.append({
+            "factor": "Low Humidity",
+            "impact": "High transpiration rates, increased water loss",
+            "recommendation": "Increase irrigation frequency, consider misting systems",
+            "priority": "High"
+        })
+    elif humidity > 80:
+        advice_sections.append({
+            "factor": "High Humidity",
+            "impact": "Reduced transpiration, increased disease risk",
+            "recommendation": "Reduce irrigation, improve ventilation",
+            "priority": "Medium"
+        })
+    
+    # Precipitation-based advice
+    if precipitation > 5:
+        advice_sections.append({
+            "factor": "Heavy Rainfall",
+            "impact": "Sufficient soil moisture, risk of runoff",
+            "recommendation": "Skip irrigation today, monitor soil drainage",
+            "priority": "High"
+        })
+    elif precipitation > 0:
+        advice_sections.append({
+            "factor": "Light Rainfall",
+            "impact": "Some soil moisture added",
+            "recommendation": "Reduce irrigation amount by 50%",
+            "priority": "Medium"
+        })
+    
+    # Wind-based advice
+    if wind_speed > 20:
+        advice_sections.append({
+            "factor": "High Winds",
+            "impact": "Increased evaporation, irrigation inefficiency",
+            "recommendation": "Avoid overhead irrigation, use drip systems",
+            "priority": "High"
+        })
+    
+    # UV Index advice
+    if uv_index > 8:
+        advice_sections.append({
+            "factor": "High UV Index",
+            "impact": "Increased plant stress, higher water demand",
+            "recommendation": "Irrigate early morning or evening, provide shade",
+            "priority": "Medium"
+        })
+    
+    # Cloud cover advice
+    if cloud_cover > 80:
+        advice_sections.append({
+            "factor": "Heavy Cloud Cover",
+            "impact": "Reduced evaporation, lower water demand",
+            "recommendation": "Reduce irrigation frequency",
+            "priority": "Low"
+        })
+    
+    if not advice_sections:
+        advice_sections.append({
+            "factor": "Optimal Conditions",
+            "impact": "Weather conditions are favorable for normal irrigation",
+            "recommendation": "Continue with regular irrigation schedule",
+            "priority": "Low"
+        })
+    
+    return {
+        "summary": generate_irrigation_summary(advice_sections),
+        "detailed_advice": advice_sections,
+        "overall_recommendation": get_overall_irrigation_recommendation(advice_sections)
+    }
+
+def generate_irrigation_summary(advice_sections):
+    """Generate a summary of irrigation advice"""
+    high_priority = [advice for advice in advice_sections if advice["priority"] == "High"]
+    medium_priority = [advice for advice in advice_sections if advice["priority"] == "Medium"]
+    
+    if high_priority:
+        return f"Critical irrigation adjustments needed: {len(high_priority)} high-priority factors detected."
+    elif medium_priority:
+        return f"Moderate irrigation adjustments recommended: {len(medium_priority)} factors to consider."
+    else:
+        return "Weather conditions are optimal for normal irrigation practices."
+
+def get_overall_irrigation_recommendation(advice_sections):
+    """Get overall irrigation recommendation"""
+    high_priority = [advice for advice in advice_sections if advice["priority"] == "High"]
+    
+    if high_priority:
+        return "ADJUST IMMEDIATELY"
+    elif len(advice_sections) > 2:
+        return "MODERATE ADJUSTMENTS"
+    else:
+        return "NORMAL SCHEDULE"
+
+def generate_irrigation_advice(weather):
+    """Generate irrigation advice based on weather conditions"""
+    if not weather:
+        return "Weather data not available for irrigation advice."
+    
+    temp = weather['temperature'] if weather['temperature'] is not None else 0
+    humidity = weather['humidity'] if weather['humidity'] is not None else 0
+    precipitation = weather['precipitation'] if weather['precipitation'] is not None else 0
+    wind_speed = weather['wind_speed'] if weather['wind_speed'] is not None else 0
+    
+    advice = []
+    
+    # Temperature-based advice
+    if temp > 30:
+        advice.append("High temperature detected. Consider additional irrigation.")
+    elif temp < 10:
+        advice.append("Low temperature. Reduce irrigation to prevent waterlogging.")
+    
+    # Humidity-based advice
+    if humidity < 40:
+        advice.append("Low humidity. Increase irrigation frequency.")
+    elif humidity > 80:
+        advice.append("High humidity. Reduce irrigation to prevent fungal diseases.")
+    
+    # Precipitation-based advice
+    if precipitation > 5:
+        advice.append("Recent rainfall detected. Skip irrigation for today.")
+    elif precipitation > 0:
+        advice.append("Light rainfall. Reduce irrigation amount.")
+    
+    # Wind-based advice
+    if wind_speed > 20:
+        advice.append("High winds. Avoid overhead irrigation to prevent water loss.")
+    
+    if not advice:
+        advice.append("Weather conditions are optimal for normal irrigation schedule.")
+    
+    return " ".join(advice)
+
 @app.route('/api/forecast', methods=['GET'])
 def get_forecast():
     """
@@ -541,11 +1103,15 @@ def get_forecast():
 
 @app.after_request
 def add_header(response):
-    """Add headers to prevent caching for real-time data"""
+    """Add headers to prevent caching for real-time data and ensure CORS"""
     if request.path.startswith('/api/'):
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '-1'
+        # Ensure CORS headers are set for API routes
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
     
 @app.route('/', defaults={'path': ''})

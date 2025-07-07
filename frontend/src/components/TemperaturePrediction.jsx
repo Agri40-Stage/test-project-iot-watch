@@ -106,10 +106,10 @@ const TemperaturePrediction = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm dark:shadow-gray-700 border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Loading predictions...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading predictions...</p>
         </div>
       </div>
     );
@@ -215,18 +215,18 @@ const TemperaturePrediction = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm dark:shadow-gray-700 border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition-shadow duration-200 h-full">
       <div className="mb-4 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Temperature Prediction</h2>
-          <p className="text-sm font-medium text-gray-500">5-Day Hourly Temperature Forecast</p>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Temperature Prediction</h2>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">5-Day Hourly Temperature Forecast</p>
         </div>
         
         <div className="flex items-center gap-2">
-          <label htmlFor="daySelect" className="text-sm font-medium text-gray-600">Day to predict:</label>
+          <label htmlFor="daySelect" className="text-sm font-medium text-gray-600 dark:text-gray-300">Day to predict:</label>
           <select 
             id="daySelect"
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+            className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
             value={predictionDay}
             onChange={(e) => setPredictionDay(parseInt(e.target.value))}
           >
@@ -247,9 +247,9 @@ const TemperaturePrediction = () => {
             </svg>
             {error || "No prediction data available"}
           </div>
-          <details className="text-xs text-gray-500 mt-2 p-2 border rounded bg-gray-50">
-            <summary className="cursor-pointer hover:text-gray-700">Debug Information</summary>
-            <pre className="whitespace-pre-wrap mt-2">{debugInfo}</pre>
+          <details className="text-xs text-gray-500 dark:text-gray-400 mt-2 p-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700">
+            <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-200">Debug Information</summary>
+            <pre className="whitespace-pre-wrap mt-2 text-gray-700 dark:text-gray-300">{debugInfo}</pre>
           </details>
           <button 
             className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors duration-200 shadow-sm"

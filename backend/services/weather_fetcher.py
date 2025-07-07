@@ -10,12 +10,47 @@ def get_current_temperature():
         # Open-Meteo Forecast API endpoint
         url = "https://api.open-meteo.com/v1/forecast"
         
-        # Parameters to get current weather for Agadir
+        # Parameters to get comprehensive weather data for agriculture
         params = {
             "latitude": DEFAULT_LATITUDE,
             "longitude": DEFAULT_LONGITUDE,
-            "current_weather": True,
-            "hourly": "temperature_2m",
+            "current": [
+                "temperature_2m",
+                "relative_humidity_2m",
+                "apparent_temperature",
+                "precipitation",
+                "weather_code",
+                "wind_speed_10m",
+                "wind_direction_10m",
+                "pressure_msl",
+                "cloud_cover",
+                "uv_index"
+            ],
+            "hourly": [
+                "temperature_2m",
+                "relative_humidity_2m",
+                "precipitation",
+                "weather_code",
+                "wind_speed_10m",
+                "wind_direction_10m",
+                "pressure_msl",
+                "cloud_cover",
+                "uv_index",
+                "soil_temperature_0_to_7cm",
+                "soil_moisture_0_to_7cm"
+            ],
+            "daily": [
+                "temperature_2m_max",
+                "temperature_2m_min",
+                "precipitation_sum",
+                "rain_sum",
+                "snowfall_sum",
+                "wind_speed_10m_max",
+                "wind_direction_10m_dominant",
+                "sunshine_duration",
+                "uv_index_max",
+                "precipitation_hours"
+            ],
             "timezone": "auto"
         }
         
@@ -25,9 +60,18 @@ def get_current_temperature():
         if response.ok:
             data = response.json()
             
-            if "current_weather" in data:
-                current_temp = data["current_weather"]["temperature"]
+            if "current" in data:
+                current_data = data["current"]
                 timestamp = datetime.now().isoformat()
+                
+                # Extract current weather data
+                current_temp = current_data.get("temperature_2m", 0)
+                current_humidity = current_data.get("relative_humidity_2m", 0)
+                current_precipitation = current_data.get("precipitation", 0)
+                current_wind_speed = current_data.get("wind_speed_10m", 0)
+                current_uv_index = current_data.get("uv_index", 0)
+                current_pressure = current_data.get("pressure_msl", 0)
+                current_cloud_cover = current_data.get("cloud_cover", 0)
                 
                 # Store in database
                 conn = get_db_connection()
@@ -39,8 +83,18 @@ def get_current_temperature():
                     VALUES (?, ?, ?, ?)
                     ''', (timestamp, current_temp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
                     
+                    # Store additional weather data in a new table
+                    cursor.execute('''
+                    INSERT OR REPLACE INTO weather_data 
+                    (timestamp, temperature, humidity, precipitation, wind_speed, uv_index, pressure, cloud_cover, latitude, longitude)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (timestamp, current_temp, current_humidity, current_precipitation, 
+                         current_wind_speed, current_uv_index, current_pressure, current_cloud_cover,
+                         DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+                    
                     conn.commit()
-                    print(f"[{timestamp}] Temperature stored: {current_temp:.2f}°C")
+                    print(f"[{timestamp}] Weather data stored: Temp={current_temp:.1f}°C, Humidity={current_humidity:.1f}%, "
+                          f"Precip={current_precipitation:.1f}mm, Wind={current_wind_speed:.1f}km/h, UV={current_uv_index:.1f}")
                     
                     # Get the last 10 readings for this hour
                     cursor.execute('''
