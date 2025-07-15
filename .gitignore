@@ -1,0 +1,26 @@
+
+# Ignore Python virtual environment folder
+iot-env/
+node_modules/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# VS Code settings (if you use VSCode)
+.vscode/
+
+
+
+# Logs and databases
+*.log
+*.sqlite3
+
+
+
