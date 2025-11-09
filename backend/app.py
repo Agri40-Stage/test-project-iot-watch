@@ -16,6 +16,7 @@ from api.history import history_bp
 from api.weekly_stats import weekly_stats_bp
 from api.predictions import predictions_bp
 from api.humidity import humidity_bp
+from api.humidity_stats import humidity_stats_bp
 
 load_dotenv()
 app = Flask(__name__)
@@ -26,6 +27,7 @@ app.register_blueprint(history_bp, url_prefix='/api')
 app.register_blueprint(weekly_stats_bp, url_prefix='/api')
 app.register_blueprint(predictions_bp, url_prefix='/api')
 app.register_blueprint(humidity_bp, url_prefix='/api')
+app.register_blueprint(humidity_stats_bp, url_prefix='/api')
 
 init_db()
 

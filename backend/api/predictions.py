@@ -1,14 +1,15 @@
+
 import traceback
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 from db.connection import get_db_connection
-from services.prediction_service import predict_for_day, update_all_predictions
+from services.prediction_service import update_all_predictions
 
 predictions_bp = Blueprint('predictions_bp', __name__)
 
 @predictions_bp.route('/predict', methods=['GET'])
 def predict_temperature():
-    """Get temperature predictions from database"""
+    """Get temperature predictions from the database for a specific day."""
     try:
         day = int(request.args.get('day', '1'))
         if day < 1 or day > 5:
@@ -17,38 +18,42 @@ def predict_temperature():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        tomorrow = datetime.now() + timedelta(days=1)
+        tomorrow = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
         start_time = tomorrow + timedelta(days=day - 1)
-        start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(days=1)
         
         cursor.execute('SELECT * FROM temperature_predictions WHERE target_date >= ? AND target_date < ? ORDER BY hour ASC', (start_time.isoformat(), end_time.isoformat()))
         predictions = cursor.fetchall()
+        
+        if not predictions:
+            print(f"No predictions found for day {day}, triggering a full forecast update...")
+            update_all_predictions()
+            cursor.execute('SELECT * FROM temperature_predictions WHERE target_date >= ? AND target_date < ? ORDER BY hour ASC', (start_time.isoformat(), end_time.isoformat()))
+            predictions = cursor.fetchall()
+
         conn.close()
         
         if not predictions:
-            print(f"No predictions found for day {day}, generating new predictions...")
-            result = predict_for_day(day)
-            return jsonify(result)
-        
-        hourly_predictions, timestamps, temperatures = [], [], []
+             return jsonify({"error": f"Still no prediction data available for day {day} after refresh."}), 404
+
+        hourly_predictions = []
+        timestamps = [p['target_date'] for p in predictions]
+        temperatures = [p['temperature'] for p in predictions]
         
         for pred in predictions:
             target_time = datetime.fromisoformat(pred['target_date'])
             hourly_predictions.append({"hour": pred['hour'], "time": target_time.strftime("%H:00"), "temperature": pred['temperature']})
-            timestamps.append(pred['target_date'])
-            temperatures.append(pred['temperature'])
         
         return jsonify({
             "day": day, "date": start_time.strftime("%Y-%m-%d"), "day_of_week": start_time.strftime("%A"),
-            "timestamps": timestamps, "predictions": [p["temperature"] for p in hourly_predictions], "hourly": hourly_predictions,
-            "min_temp": min(temperatures) if temperatures else None, "max_temp": max(temperatures) if temperatures else None,
-            "avg_temp": sum(temperatures) / len(temperatures) if temperatures else None
+            "timestamps": timestamps, "predictions": temperatures, "hourly": hourly_predictions,
+            "min_temp": min(temperatures), "max_temp": max(temperatures),
+            "avg_temp": sum(temperatures) / len(temperatures)
         })
         
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 @predictions_bp.route('/forecast', methods=['GET'])
 def get_forecast():
