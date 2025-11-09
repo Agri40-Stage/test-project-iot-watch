@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime
 from db.connection import get_db_connection
 from db.maintenance import DEFAULT_LATITUDE, DEFAULT_LONGITUDE
-from services.weather_fetcher import get_current_temperature
+from services.weather_fetcher import fetch_and_store_current_weather
 from utils.trend_calculator import calculate_realtime_trend
 
 latest_bp = Blueprint('latest_bp', __name__)
@@ -26,10 +26,10 @@ def get_latest_temperature():
         latest = cursor.fetchone()
         
         if not latest:
-            current_temp = get_current_temperature()
+            weather_data = fetch_and_store_current_weather()
             return jsonify({
                 "time": datetime.now().isoformat(),
-                "temperature": current_temp,
+                "temperature": weather_data.get("temperature") if weather_data else "N/A",
                 "trend": "stable",
                 "is_live": True
             })

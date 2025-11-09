@@ -8,14 +8,14 @@ from dotenv import load_dotenv
 
 from db.schema import init_db
 from db.maintenance import purge_old_data
-
-from services.weather_fetcher import get_current_temperature
+from services.weather_fetcher import fetch_and_store_current_weather
 from services.prediction_service import update_all_predictions
 
 from api.latest import latest_bp
 from api.history import history_bp
 from api.weekly_stats import weekly_stats_bp
 from api.predictions import predictions_bp
+from api.humidity import humidity_bp
 
 load_dotenv()
 app = Flask(__name__)
@@ -25,19 +25,21 @@ app.register_blueprint(latest_bp, url_prefix='/api')
 app.register_blueprint(history_bp, url_prefix='/api')
 app.register_blueprint(weekly_stats_bp, url_prefix='/api')
 app.register_blueprint(predictions_bp, url_prefix='/api')
+app.register_blueprint(humidity_bp, url_prefix='/api')
 
 init_db()
 
 def run_background_services():
-    def temperature_updater():
-        """Update temperature data continuously"""
+    def weather_updater():
+        """Update weather data continuously"""
         while True:
             try:
-                get_current_temperature()
-                time.sleep(1)
+                fetch_and_store_current_weather()
+                # Let's increase the interval slightly to avoid hitting API rate limits
+                time.sleep(5) 
             except Exception as e:
-                print(f"Error in temperature updater: {str(e)}")
-                time.sleep(1)
+                print(f"Error in weather updater: {str(e)}")
+                time.sleep(5)
     
     def scheduler():
         schedule.every().day.at("00:00").do(update_all_predictions)
@@ -53,10 +55,10 @@ def run_background_services():
                 print(f"Error in scheduler: {str(e)}")
                 time.sleep(1)
     
-    temp_thread = threading.Thread(target=temperature_updater)
-    temp_thread.daemon = True
-    temp_thread.start()
-    print("Background temperature updates started (every second)")
+    weather_thread = threading.Thread(target=weather_updater)
+    weather_thread.daemon = True
+    weather_thread.start()
+    print("Background weather updates started")
   
     scheduler_thread = threading.Thread(target=scheduler)
     scheduler_thread.daemon = True

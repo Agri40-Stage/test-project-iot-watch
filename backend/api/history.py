@@ -2,7 +2,8 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime
 from db.connection import get_db_connection
 from db.maintenance import DEFAULT_LATITUDE, DEFAULT_LONGITUDE
-from services.weather_fetcher import get_current_temperature
+
+from services.weather_fetcher import fetch_and_store_current_weather
 
 history_bp = Blueprint('history_bp', __name__)
 
@@ -24,9 +25,12 @@ def get_temperature_history():
         LIMIT 10
         ''', (latitude, longitude))
         readings = cursor.fetchall()
+        
+        # This block is a fallback for when the app starts with an empty database
         if not readings:
-            get_current_temperature()
+            fetch_and_store_current_weather()
 
+            # Try fetching again now that there should be at least one record
             cursor.execute('''
             SELECT timestamp, temperature
             FROM temperature_data
