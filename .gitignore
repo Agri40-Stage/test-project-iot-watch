@@ -1,0 +1,55 @@
+
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+# Virtual Environments
+venv/
+iot-env/
+.venv/
+env/
+ENV/
+
+# Byte-compiled / optimized / C extensions
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Instance Folder (for database file)
+instance/
+backend/instance/
+
+# Python Build artifacts
+build/
+*.egg-info/
+
+
+# Ignore all .env files and files ending in .local
+.env
+.env.*
+*.local
+!.env.example
