@@ -3,29 +3,88 @@ import time
 import threading
 import sqlite3
 import schedule
-import numpy as np
 import pandas as pd
-from flask_cors import CORS
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
-from services.weather_fetcher import *
-from models import *
+from flask_cors import CORS
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    get_jwt_identity,
+    jwt_required,
+)
+from dotenv import load_dotenv
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from models import (
+    DEFAULT_LATITUDE,
+    DEFAULT_LONGITUDE,
+    get_db_connection,
+    generate_mock_data,
+    init_db,
+    purge_old_data,
+    standardize_timestamp,
+)
+from services.ai_insights import get_ai_insights
+from services.weather_fetcher import get_current_temperature
+from services.prediction_service import predict_for_day, update_all_predictions
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "change-me-in-prod")
+jwt = JWTManager(app)
 
-UPDATE_INTERVAL_SECONDS = 60
-PREDICTION_UPDATE_HOURS = 24
-CACHE_DURATION = 600
-last_prediction = None
-last_prediction_time = None
+DATA_REFRESH_SECONDS = int(os.getenv("DATA_REFRESH_SECONDS", "60"))
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "iot-admin")
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")
+_default_admin_password = os.getenv("ADMIN_PASSWORD", "iot-admin-pass")
+PASSWORD_HASH = (
+    ADMIN_PASSWORD_HASH
+    if ADMIN_PASSWORD_HASH
+    else generate_password_hash(_default_admin_password)
+)
+ENABLE_BACKGROUND_JOBS = os.getenv("ENABLE_BACKGROUND_JOBS", "true").lower() == "true"
 
 
 # Initialize database
 init_db()
+
+
+def verify_credentials(username: str, password: str) -> bool:
+    if not username or not password:
+        return False
+    if username != ADMIN_USERNAME:
+        return False
+    return check_password_hash(PASSWORD_HASH, password)
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    payload = request.get_json() or {}
+    username = (payload.get("username") or "").strip()
+    password = payload.get("password") or ""
+    remember_me = bool(payload.get("rememberMe"))
+
+    if not verify_credentials(username, password):
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    expires = timedelta(days=7) if remember_me else timedelta(hours=12)
+    token = create_access_token(identity=username, expires_delta=expires)
+
+    return jsonify(
+        {
+            "accessToken": token,
+            "expiresIn": expires.total_seconds(),
+            "tokenType": "Bearer",
+        }
+    )
+
+
+@app.route("/api/auth/profile", methods=["GET"])
+@jwt_required()
+def profile():
+    return jsonify({"username": get_jwt_identity()})
 
 def run_background_services():
     def temperature_updater():
@@ -33,10 +92,10 @@ def run_background_services():
         while True:
             try:
                 get_current_temperature()
-                time.sleep(1)
+                time.sleep(DATA_REFRESH_SECONDS)
             except Exception as e:
                 print(f"Error in temperature updater: {str(e)}")
-                time.sleep(1)
+                time.sleep(min(10, DATA_REFRESH_SECONDS))
     
     def scheduler():
         schedule.every().day.at("00:00").do(update_all_predictions)
@@ -56,7 +115,7 @@ def run_background_services():
     temp_thread = threading.Thread(target=temperature_updater)
     temp_thread.daemon = True
     temp_thread.start()
-    print("Background temperature updates started (every second)")
+    print(f"Background temperature updates started (every {DATA_REFRESH_SECONDS}s)")
   
     # Start scheduler in a background thread
     scheduler_thread = threading.Thread(target=scheduler)
@@ -67,6 +126,7 @@ def run_background_services():
     print("All background services started successfully")
 
 @app.route('/api/latest', methods=['GET'])
+@jwt_required()
 def get_latest_temperature():
     """Get the latest temperature reading and current hour's average"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -91,6 +151,7 @@ def get_latest_temperature():
                 "time": datetime.now().isoformat(),
                 "temperature": current_temp,
                 "trend": "stable",
+                "humidity": None,
                 "is_live": True
             })
         
@@ -125,6 +186,7 @@ def get_latest_temperature():
         return jsonify({
             "time": latest['timestamp'],
             "temperature": float(latest['temperature']),
+            "humidity": float(latest['humidity']) if latest['humidity'] is not None else None,
             "current_hour_avg": float(hour_stats['avg_temp']) if hour_stats else None,
             "readings_this_hour": hour_stats['count'] if hour_stats else 0,
             "trend": trend,
@@ -138,6 +200,7 @@ def get_latest_temperature():
         conn.close()
 
 @app.route('/api/history', methods=['GET'])
+@jwt_required()
 def get_temperature_history():
     """Get the last 10 individual temperature readings"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -193,6 +256,7 @@ def get_temperature_history():
         conn.close()
 
 @app.route('/api/weekly-stats', methods=['GET'])
+@jwt_required()
 def get_weekly_stats():
     try:
         latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -268,7 +332,80 @@ def get_weekly_stats():
             "avgTemps": []
         })
 
+
+@app.route('/api/humidity/daily', methods=['GET'])
+@jwt_required()
+def get_humidity_daily():
+    """Return the last 7 days of humidity aggregates."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
+
+        cursor.execute(
+            """
+            SELECT 
+                DATE(timestamp) as day,
+                AVG(humidity) as avg_humidity,
+                MIN(humidity) as min_humidity,
+                MAX(humidity) as max_humidity
+            FROM temperature_data
+            WHERE timestamp >= ? AND humidity IS NOT NULL
+            GROUP BY day
+            ORDER BY day DESC
+            LIMIT 7
+            """,
+            (seven_days_ago,),
+        )
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            return jsonify({"days": [], "avg": [], "min": [], "max": []})
+
+        rows = list(reversed(rows))
+        return jsonify(
+            {
+                "days": [row["day"] for row in rows],
+                "avg": [row["avg_humidity"] for row in rows],
+                "min": [row["min_humidity"] for row in rows],
+                "max": [row["max_humidity"] for row in rows],
+            }
+        )
+    except Exception as exc:
+        print(f"Error fetching humidity stats: {exc}")
+        return jsonify({"error": str(exc), "days": [], "avg": [], "min": [], "max": []}), 500
+
+
+@app.route('/api/ai/insights', methods=['GET'])
+@jwt_required()
+def ai_insights():
+    """Generate AI/LLM powered insights about the latest readings."""
+    latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+    longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT timestamp, temperature, humidity
+        FROM temperature_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 32
+        """,
+        (latitude, longitude),
+    )
+    readings = cursor.fetchall()
+    conn.close()
+
+    insight = get_ai_insights(readings)
+    return jsonify(insight)
+
 @app.route('/api/predict', methods=['GET'])
+@jwt_required()
 def predict_temperature():
     """Get temperature predictions from database"""
     try:
@@ -279,13 +416,11 @@ def predict_temperature():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Calculate the date range starting from tomorrow
         tomorrow = datetime.now() + timedelta(days=1)
         start_time = tomorrow + timedelta(days=day-1)
         start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(days=1)
         
-        # Get predictions from database
         cursor.execute('''
         SELECT * FROM temperature_predictions
         WHERE target_date >= ? AND target_date < ?
@@ -300,7 +435,6 @@ def predict_temperature():
             result = predict_for_day(day)
             return jsonify(result)
         
-        # Format the predictions
         hourly_predictions = []
         timestamps = []
         temperatures = []
@@ -332,106 +466,8 @@ def predict_temperature():
         traceback.print_exc()
         return jsonify({"error": str(e)})
 
-def predict_for_day(day):
-    """Generate temperature predictions for a specific day and store in database"""
-    try:
-        model = load_prediction_model()
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            tomorrow = datetime.now() + timedelta(days=1)
-            start_time = tomorrow + timedelta(days=day-1)
-            start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time = start_time + timedelta(days=1)
-            
-            # Get historical data for better predictions
-            cursor.execute('''
-            SELECT timestamp, temperature FROM temperature_data
-            ORDER BY timestamp DESC
-            LIMIT 168  -- Get last 7 days of hourly data
-            ''')
-            
-            history = cursor.fetchall()
-            if not history:
-                raise ValueError("No historical data available for predictions")
-            
-            historical_temps = np.array([record[1] for record in history], dtype=np.float32)            
-            scaler = MinMaxScaler(feature_range=(-1, 1))
-            data_scaled = scaler.fit_transform(historical_temps.reshape(-1, 1))
-            
-            # Ensure we have enough data or pad if necessary
-            if len(data_scaled) < 30:
-                pad_amount = 30 - len(data_scaled)
-                data_scaled = np.pad(data_scaled, ((pad_amount, 0), (0, 0)), mode='wrap')
-            
-            # Prepare sequence for prediction
-            sequence = data_scaled[-30:].reshape(1, 30, 1)            
-            predictions = model.predict(sequence, verbose=0)
-            base_temp = float(scaler.inverse_transform(predictions)[0][0])
-            
-            hourly_predictions = []
-            timestamps = []
-            
-            # Add seasonal and daily variations
-            day_of_year = start_time.timetuple().tm_yday
-            seasonal_factor = np.sin(2 * np.pi * day_of_year / 365) * 3.0
-            
-            # Generate predictions for each hour
-            for hour in range(24):
-                timestamp = start_time + timedelta(hours=hour)
-                hour_factor = np.cos(2 * np.pi * ((hour - 14) / 24))
-                daily_variation = 3.0 * hour_factor
-                noise = np.random.normal(0, 0.2)
-                temperature = base_temp + daily_variation + seasonal_factor + noise
-                
-                try:
-                    cursor.execute('''
-                    INSERT INTO temperature_predictions 
-                    (prediction_date, target_date, hour, temperature, latitude, longitude)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (datetime.now().isoformat(), timestamp.isoformat(), hour, temperature, 
-                         DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-                    
-                    hourly_predictions.append(float(temperature))
-                    timestamps.append(timestamp.isoformat())
-                    
-                except sqlite3.OperationalError as e:
-                    if "database is locked" in str(e):
-                        print(f"Database locked, retrying hour {hour}")
-                        time.sleep(0.1)
-                        continue
-                    raise
-            
-            # Commit all predictions
-            conn.commit()
-            print(f"Successfully stored {len(hourly_predictions)} hourly predictions for day {day}")
-            
-            return {
-                "day": day,
-                "date": start_time.strftime("%Y-%m-%d"),
-                "day_of_week": start_time.strftime("%A"),
-                "timestamps": timestamps,
-                "predictions": hourly_predictions,
-                "min_temp": min(hourly_predictions) if hourly_predictions else None,
-                "max_temp": max(hourly_predictions) if hourly_predictions else None,
-                "avg_temp": sum(hourly_predictions) / len(hourly_predictions) if hourly_predictions else None
-            }
-            
-        except Exception as e:
-            print(f"Error making predictions for day {day}: {str(e)}")
-            raise
-            
-    except Exception as e:
-        print(f"Error in predict_for_day: {str(e)}")
-        raise
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
-
 @app.route('/api/forecast', methods=['GET'])
+@jwt_required()
 def get_forecast():
     """
     Get a comprehensive 5-day hourly forecast.
@@ -554,11 +590,17 @@ def serve(path):
     """Serve React app files from frontend/ReactApp directory"""
     static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'ReactApp', 'dist')
     
+    if not os.path.exists(static_dir):
+        return jsonify({"message": "Frontend build not found. Run `npm run build` inside frontend/ReactApp."}), 404
+    
     if path and os.path.exists(os.path.join(static_dir, path)):
         return send_from_directory(static_dir, path)
     else:
         return send_from_directory(static_dir, 'index.html')
 
 if __name__ == "__main__":
-    run_background_services()
-    app.run(host="0.0.0.0", port=5000)
+    if ENABLE_BACKGROUND_JOBS:
+        run_background_services()
+    else:
+        print("Background jobs are disabled via configuration.")
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

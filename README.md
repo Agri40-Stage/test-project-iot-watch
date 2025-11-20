@@ -74,7 +74,6 @@ Use one of the following free/public sensor APIs:
 | Bonus features    | ★★☆☆☆     |
 | IoT               | ★★★★☆     |
 
-
 ## Configuration manuelle
 
 1. Télécharger Python 3.10 depuis le site officiel :
@@ -144,5 +143,5 @@ Activer l'environnement virtuel :
 
 Le backend fournit les points de terminaison suivants :
 
-- `/data/latest` – Obtenir la dernière température avec tendance
+- `/data/latest` – Obtenir la dernière température avec tendance  
 - `/data/history` – Obtenir l'historique des températures des dernières heures

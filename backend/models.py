@@ -1,10 +1,12 @@
-import sqlite3
 import os
+import sqlite3
 from datetime import datetime, timedelta
+
 import numpy as np
 from tensorflow.keras.models import load_model
 
 BASE_TEMP = 25.0
+BASE_HUMIDITY = 55.0
 DEFAULT_LATITUDE = 30.4202
 DEFAULT_LONGITUDE = -9.5982
 
@@ -14,24 +16,32 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def ensure_humidity_column(cursor):
+    """Ensure humidity column exists on temperature_data table."""
+    cursor.execute("PRAGMA table_info(temperature_data)")
+    columns = [row["name"] for row in cursor.fetchall()]
+    if "humidity" not in columns:
+        cursor.execute("ALTER TABLE temperature_data ADD COLUMN humidity REAL")
+
+
 def generate_mock_data(clear_existing=True):
     """Generate mock temperature data for testing"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     if clear_existing:
         cursor.execute('DELETE FROM temperature_data')
-    
-    # Generate data for the last 7 days
+
     base_time = datetime.now() - timedelta(days=7)
     for i in range(168):
         timestamp = (base_time + timedelta(hours=i)).isoformat()
         temperature = BASE_TEMP + np.random.normal(0, 2)
+        humidity = BASE_HUMIDITY + np.random.normal(0, 5)
         cursor.execute('''
-        INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
-        VALUES (?, ?, ?, ?)
-        ''', (timestamp, temperature, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-    
+        INSERT INTO temperature_data (timestamp, temperature, humidity, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?)
+        ''', (timestamp, temperature, humidity, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+
     conn.commit()
     conn.close()
     print("Mock data generated successfully")
@@ -45,11 +55,14 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp TEXT NOT NULL,
         temperature REAL NOT NULL,
+        humidity REAL,
         latitude REAL NOT NULL,
         longitude REAL NOT NULL
     )
     ''')
-    
+
+    ensure_humidity_column(cursor)
+
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS temperature_predictions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +81,7 @@ def init_db():
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_target_date ON temperature_predictions(target_date)')
     
     conn.commit()
-    
+
     cursor.execute('SELECT COUNT(*) FROM temperature_data')
     count = cursor.fetchone()[0]
     
