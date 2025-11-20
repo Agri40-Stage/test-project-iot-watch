@@ -10,7 +10,8 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { API_BASE_URL } from '../config';
+import { apiRequest } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 // Register ChartJS components
 ChartJS.register(
@@ -29,21 +30,14 @@ const TemperaturePrediction = () => {
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState("");
   const [predictionDay, setPredictionDay] = useState(1);
+  const { token, isAuthenticated } = useAuth();
 
   const fetchPredictions = async () => {
     try {
       setLoading(true);
-      console.log(`Fetching predictions from: ${API_BASE_URL}/api/predict?day=${predictionDay}`);
-      setDebugInfo(`Attempting to fetch from: ${API_BASE_URL}/api/predict?day=${predictionDay}`);
+      setDebugInfo(`Attempting to fetch from /api/predict?day=${predictionDay}`);
       
-      const response = await fetch(`${API_BASE_URL}/api/predict?day=${predictionDay}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest(`/api/predict?day=${predictionDay}`, { token });
       console.log("Prediction data received:", data);
       
       if (data.error) {
@@ -64,21 +58,7 @@ const TemperaturePrediction = () => {
       if (err.message.includes("Not enough historical data")) {
         try {
           setDebugInfo(prev => prev + "\nAttempting to insert mock data...");
-          const mockDataResponse = await fetch(`${API_BASE_URL}/api/insert-mock-data`, {
-            method: 'POST'
-          });
-          
-          if (mockDataResponse.ok) {
-            setDebugInfo(prev => prev + "\nMock data inserted successfully. Retrying prediction...");
-            
-            // Wait a moment for the database to be updated
-            setTimeout(() => {
-              setDebugInfo(prev => prev + "\nRetrying prediction fetch...");
-              fetchPredictions();
-            }, 1000);
-          } else {
-            setDebugInfo(prev => prev + "\nFailed to insert mock data");
-          }
+          setDebugInfo(prev => prev + "\nInsufficient telemetry for predictions.");
         } catch (mockErr) {
           setDebugInfo(prev => prev + `\nError inserting mock data: ${mockErr.message}`);
         }
@@ -89,15 +69,28 @@ const TemperaturePrediction = () => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return undefined;
+    }
+
     fetchPredictions();
-    
-    // Refresh predictions every 30 minutes
     const interval = setInterval(() => {
       fetchPredictions();
     }, 30 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [predictionDay]);
+  }, [predictionDay, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-full">
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Temperature Prediction</h2>
+        <p className="text-sm text-gray-500 text-center">
+          Sign in to unlock AI-driven forecasts for the next 5 days.
+        </p>
+      </div>
+    );
+  }
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);

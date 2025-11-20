@@ -11,7 +11,8 @@ import {
   Legend,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import { API_BASE_URL } from '../config';
+import { apiRequest } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 // Register ChartJS components
 ChartJS.register(
@@ -30,21 +31,13 @@ const WeeklyStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState("");
+  const { token, isAuthenticated } = useAuth();
 
   const fetchWeeklyStats = async () => {
     try {
       setLoading(true);
-      console.log(`Fetching weekly stats from: ${API_BASE_URL}/api/weekly-stats`);
-      setDebugInfo(`Attempting to fetch from: ${API_BASE_URL}/api/weekly-stats`);
-      
-      const response = await fetch(`${API_BASE_URL}/api/weekly-stats`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
-      }
-      
-      const data = await response.json();
+      setDebugInfo("Attempting to fetch from /api/weekly-stats");
+      const data = await apiRequest("/api/weekly-stats", { token });
       console.log("Weekly stats data received:", data);
       setDebugInfo(prev => prev + "\nData received successfully");
       
@@ -59,29 +52,35 @@ const WeeklyStats = () => {
       setError(`Failed to load weekly statistics: ${err.message}`);
       setDebugInfo(prev => prev + `\nError: ${err.message}`);
       
-      // Try to fetch from backup API if available
-      try {
-        setDebugInfo(prev => prev + "\nAttempting fallback fetch...");
-        // Implement fallback logic here if needed
-      } catch (fallbackErr) {
-        console.error("Fallback fetch also failed:", fallbackErr);
-        setDebugInfo(prev => prev + `\nFallback also failed: ${fallbackErr.message}`);
-      }
+      setDebugInfo(prev => prev + "\nFallback not configured.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return undefined;
+    }
+
     fetchWeeklyStats();
-    
-    // Refresh data every minute
     const interval = setInterval(() => {
       fetchWeeklyStats();
     }, 60000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-full">
+        <h2 className="text-xl font-semibold text-gray-800">Weekly Temperature Stats</h2>
+        <p className="text-sm text-gray-500 text-center">
+          Authenticate to explore weekly min/avg/max telemetry.
+        </p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

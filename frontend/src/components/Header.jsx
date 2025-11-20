@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiSun, FiMoon } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 
 function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -10,6 +11,7 @@ function Header() {
         }
         return window.matchMedia("(prefers-color-scheme: dark)").matches;
     });
+    const { isAuthenticated } = useAuth();
 
     useEffect(() => {
         if (dark) {
@@ -46,8 +48,9 @@ function Header() {
                 </ul>
                 {/* Buttons and light mode/dark mode toggle */}
                 <div className="hidden md:flex flex-row space-x-4 flex-1 justify-end items-center">
-                    <button className="bg-green-500 rounded-b-xl text-white px-4 py-2"><span>Say Hello!</span></button>
-                    <button className="bg-green-400 rounded-b-xl text-white px-4 py-2"><span>Contact Us!</span></button>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isAuthenticated ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                        {isAuthenticated ? "Authenticated" : "Guest"}
+                    </span>
                     <button
                         className="ml-2 p-2 rounded-full border-2 border-green-500 text-green-500 hover:bg-green-50 transition"
                         onClick={() => setDark((d) => !d)}
