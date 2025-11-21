@@ -1,56 +1,60 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { Link } from 'react-router-dom';
 
-/* Icons */
-import { ArrowDownIcon, ArrowUpIcon, ThermometerIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Thermometer } from "lucide-react";
 
 const TemperatureCrad = ({ time, temperature, trend }) => {
+  
+  const formattedTemperature = temperature && !isNaN(temperature) ? parseFloat(temperature).toFixed(1) : "N/A";
+  const lastUpdated = time ? new Date(time).toLocaleTimeString() : "...";
+
   return (
-    <div className="flex flex-col gap-6 max-w-96 py-8 px-6 rounded-xl border-[0.5px] border-gray-300">
-      <div className="flex justify-between items-center gap-4">
-        <div className="w-full flex flex-col gap-2 text-left">
-          <h2 className="text-xl font-medium leading-none">Current Temperature</h2>
-          <p className="font-light text-gray-400 text-base leading-none">Live reading from sensor</p>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+      <div>
+        <div className="flex justify-between items-start">
+          <h2 className="font-semibold text-lg text-gray-600 dark:text-gray-300">Current Temperature</h2>
+          <Thermometer className="text-red-500" size={32} />
+        </div>
+        
+        <div className="flex items-baseline gap-2 my-4">
+            <p className="text-5xl font-bold text-gray-800 dark:text-white">
+                {formattedTemperature}
+            </p>
+            <span className="text-2xl font-semibold text-gray-700 dark:text-gray-300">°C</span>
         </div>
 
-        <div className="text-sm text-gray-400 text-nowrap">
-          {time}
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center justify-center py-6">
-        <div className="flex items-center">
-          <ThermometerIcon className="h-8 w-8 mr-2 text-red-500" />
-          <span className="text-5xl font-bold">
-            {temperature !== null ? temperature : "--"}
-          </span>
-          <span className="text-2xl font-semibold ml-1">°C</span>
-        </div>
-
-        {trend !== "stable" && (
-          <div className="flex items-center mt-2 text-sm font-medium">
+        {trend && trend !== "stable" && (
+          <div className="flex items-center text-sm font-medium">
             {trend === "up" ? (
               <>
-                <ArrowUpIcon className="h-4 w-4 mr-1 text-red-500" />
+                <ArrowUp className="h-4 w-4 mr-1 text-red-500" />
                 <span className="text-red-500">Rising</span>
               </>
             ) : (
               <>
-                <ArrowDownIcon className="h-4 w-4 mr-1 text-blue-500" />
+                <ArrowDown className="h-4 w-4 mr-1 text-blue-500" />
                 <span className="text-blue-500">Falling</span>
               </>
             )}
           </div>
         )}
       </div>
+
+      <div className="flex justify-between items-end text-sm text-gray-500 dark:text-gray-400 mt-4">
+        <span>Last updated: {lastUpdated}</span>
+        <Link to="/temperature" className="font-semibold text-green-600 hover:underline">
+          View More &rarr;
+        </Link>
+      </div>
     </div>
   );
 };
 
-TemperatureCrad.PropTypes = {
-  time: PropTypes.string.isRequired,
-  temperature: PropTypes.number.isRequired,
-  trend: PropTypes.oneOf(["up","down","stable"]).isRequired,
+TemperatureCrad.propTypes = {
+  time: PropTypes.string,
+  temperature: PropTypes.number,
+  trend: PropTypes.oneOf(["up", "down", "stable"]),
 };
 
 export default TemperatureCrad;

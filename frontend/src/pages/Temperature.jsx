@@ -1,20 +1,16 @@
 import React from 'react';
-
-/* Components */
 import Content from '../components/Content';
-import Header from '../components/Header';
-// import TemperaturePrediction from '../components/TemperaturePrediction';
-// import WeeklyStats from '../components/WeeklyStats';
+import TemperaturePrediction from '../components/TemperaturePrediction';
+import WeeklyStats from '../components/WeeklyStats';
 
-function Temperature(){
-    return(
-        <div className="w-screen max-w-screen min-h-screen bg-zinc-50">
-      <Header />
+function Temperature() {
+  // The Header and main wrapper div are now gone.
+  return (
+    <div className="flex flex-col gap-8">
       <Content />
-      {/* <TemperaturePrediction />
-      <WeeklyStats /> */}
+      <WeeklyStats />
     </div>
-    )
+  );
 }
 
 export default Temperature;
