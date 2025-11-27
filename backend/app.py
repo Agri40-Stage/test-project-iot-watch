@@ -10,12 +10,20 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from services.weather_fetcher import *
 from models import *
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
+
+# Configuration de JWT
+
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'agri4-secret-key')
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+jwt = JWTManager(app)
+
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -66,7 +74,50 @@ def run_background_services():
     
     print("All background services started successfully")
 
+
+# Authentification routes
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Login endpoint - generates JWT token"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        # TODO: Add your user authentication logic here
+        # This is a simple example - replace with proper authentication
+        if username == "admin" and password == "password":
+            access_token = create_access_token(identity=username)
+            return jsonify({
+                "success": True,
+                "access_token": access_token,
+                "username": username
+            }), 200
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Invalid credentials"
+            }), 401
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/auth/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    """Example protected route"""
+    current_user = get_jwt_identity()
+    return jsonify({
+        "success": True,
+        "message": f"Hello {current_user}!",
+        "logged_in_as": current_user
+    }), 200
+    
 @app.route('/api/latest', methods=['GET'])
+@jwt_required()
 def get_latest_temperature():
     """Get the latest temperature reading and current hour's average"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -138,6 +189,7 @@ def get_latest_temperature():
         conn.close()
 
 @app.route('/api/history', methods=['GET'])
+@jwt_required()
 def get_temperature_history():
     """Get the last 10 individual temperature readings"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -193,6 +245,7 @@ def get_temperature_history():
         conn.close()
 
 @app.route('/api/weekly-stats', methods=['GET'])
+@jwt_required()
 def get_weekly_stats():
     try:
         latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -269,6 +322,7 @@ def get_weekly_stats():
         })
 
 @app.route('/api/predict', methods=['GET'])
+@jwt_required()
 def predict_temperature():
     """Get temperature predictions from database"""
     try:
@@ -432,6 +486,7 @@ def predict_for_day(day):
             pass
 
 @app.route('/api/forecast', methods=['GET'])
+@jwt_required()
 def get_forecast():
     """
     Get a comprehensive 5-day hourly forecast.
@@ -539,6 +594,33 @@ def get_forecast():
             "error": str(e)
         })
 
+# Jwt error handlers
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({
+        "success": False,
+        "message": "Token has expired",
+        "error": "token_expired"
+    }), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({
+        "success": False,
+        "message": "Invalid token",
+        "error": "invalid_token"
+    }), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({
+        "success": False,
+        "message": "Request does not contain an access token",
+        "error": "authorization_required"
+    }), 401
+    
+    
 @app.after_request
 def add_header(response):
     """Add headers to prevent caching for real-time data"""
