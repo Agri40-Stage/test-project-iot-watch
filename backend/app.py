@@ -5,6 +5,10 @@ import sqlite3
 import schedule
 import numpy as np
 import pandas as pd
+import csv
+from io import StringIO
+from flask import make_response
+from datetime import datetime
 from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
@@ -12,6 +16,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+
 
 load_dotenv()
 app = Flask(__name__)
@@ -138,59 +143,67 @@ def get_latest_temperature():
         conn.close()
 
 @app.route('/api/history', methods=['GET'])
-def get_temperature_history():
-    """Get the last 10 individual temperature readings"""
-    latitude = request.args.get('latitude', DEFAULT_LATITUDE)
-    longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+def history():
+    """
+    Get historical temperature readings for a device with pagination.
+    Parameters:
+        - device_id: ID of the device
+        - page: page number (default 1)
+        - limit: number of records per page (default 100)
+    """
     try:
-        # Get the last 10 individual temperature readings
-        cursor.execute('''
-        SELECT timestamp, temperature
-        FROM temperature_data
-        WHERE latitude = ? AND longitude = ?
-        ORDER BY timestamp DESC
-        LIMIT 10
-        ''', (latitude, longitude))
-        readings = cursor.fetchall()
-        if not readings:
-            get_current_temperature()
+        device_id = request.args.get("device_id")
+        if not device_id:
+            return jsonify({"error": "device_id is required"}), 400
 
-            # Try fetching again
-            cursor.execute('''
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 100))
+        offset = (page - 1) * limit
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Total number of records
+        cursor.execute(
+            "SELECT COUNT(*) AS count FROM temperature_data  WHERE device_id = ?",
+            (device_id,)
+        )
+        total = cursor.fetchone()[0]
+
+        # Fetch paginated records
+        cursor.execute(
+            """
             SELECT timestamp, temperature
-            FROM temperature_data
-            WHERE latitude = ? AND longitude = ?
+            FROM temperature_data 
+            WHERE device_id = ?
             ORDER BY timestamp DESC
-            LIMIT 10
-            ''', (latitude, longitude))
-            
-            readings = cursor.fetchall()
-        
-        # Convert to lists in chronological order
-        readings = readings[::-1]  # Reverse to get chronological order
-        
-        timestamps = [record['timestamp'] for record in readings]
-        temperatures = [float(record['temperature']) for record in readings]
-        
-        print(f"[{datetime.now().isoformat()}] Returning {len(readings)} temperature readings")
-        
+            LIMIT ? OFFSET ?
+            """,
+            (device_id, limit, offset),
+        )
+        rows = cursor.fetchall()
+
+        # Format data
+        data = [{"timestamp": r[0], "temperature": r[1]} for r in rows]
+
         return jsonify({
-            "lastTimestamps": timestamps,
-            "lastTemperatures": temperatures,
-            "updateInterval": 1,
-            "count": len(readings),
-            "isHourlyAverage": False
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "data": data
         })
-        
+
     except Exception as e:
-        print(f"Error getting temperature history: {str(e)}")
-        return jsonify({"error": str(e)})
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
     finally:
-        conn.close()
+        try:
+            conn.close()
+        except:
+            pass
+
 
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
@@ -558,7 +571,103 @@ def serve(path):
         return send_from_directory(static_dir, path)
     else:
         return send_from_directory(static_dir, 'index.html')
-
+@app.route('/data/export', methods=['GET'])
+def export_csv():
+    """
+    Export temperature data as CSV file
+    Query parameters:
+    - limit: number of records to export (default: all)
+    - device_id: filter by device (optional)
+    - latitude: filter by latitude (optional)
+    - longitude: filter by longitude (optional)
+    """
+    try:
+        limit = request.args.get('limit', type=int)
+        device_id = request.args.get('device_id')
+        latitude = request.args.get('latitude')
+        longitude = request.args.get('longitude')
+        
+        # Build query based on filters
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Base query
+        query = 'SELECT * FROM temperature_data'
+        params = []
+        conditions = []
+        
+        # Add filters if provided
+        if device_id:
+            conditions.append('device_id = ?')
+            params.append(device_id)
+        
+        if latitude:
+            conditions.append('latitude = ?')
+            params.append(latitude)
+            
+        if longitude:
+            conditions.append('longitude = ?')
+            params.append(longitude)
+        
+        # Add WHERE clause if we have conditions
+        if conditions:
+            query += ' WHERE ' + ' AND '.join(conditions)
+        
+        # Add ORDER BY and LIMIT
+        query += ' ORDER BY timestamp DESC'
+        if limit:
+            query += ' LIMIT ?'
+            params.append(limit)
+        
+        # Execute query
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        # Check if we have data
+        if not rows:
+            return jsonify({
+                'error': 'No data available to export',
+                'message': 'The database does not contain any temperature records matching your criteria.'
+            }), 404
+        
+        # Create CSV in memory
+        si = StringIO()
+        writer = csv.writer(si)
+        
+        # Write header - adapt to actual columns in temperature_data table
+        writer.writerow([
+            'ID',
+            'Temperature (°C)',
+            'Timestamp',
+            'Latitude',
+            'Longitude',
+            'Device ID'
+        ])
+        
+        # Write data - use dict-like access for sqlite3.Row
+        for row in rows:
+            writer.writerow([
+                row['id'] if 'id' in row.keys() else '',
+                row['temperature'] if 'temperature' in row.keys() else '',
+                row['timestamp'] if 'timestamp' in row.keys() else '',
+                row['latitude'] if 'latitude' in row.keys() else DEFAULT_LATITUDE,
+                row['longitude'] if 'longitude' in row.keys() else DEFAULT_LONGITUDE,
+                row['device_id'] if 'device_id' in row.keys() else 'default'
+            ])
+        
+        # Create response
+        output = si.getvalue()
+        response = make_response(output)
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename=temperature_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        
+        return response
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 if __name__ == "__main__":
     run_background_services()
     app.run(host="0.0.0.0", port=5000)
