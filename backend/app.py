@@ -79,6 +79,40 @@ def add_header(response):
     return response
 
 @app.route('/', defaults={'path': ''})
+@app.route("/data/weekly-stats")
+def weekly_stats():
+    import sqlite3
+    import statistics
+
+    # Connect to SQLite database
+    conn = sqlite3.connect("database/temperature.db")
+    cursor = conn.cursor()
+
+    # Get all temperatures from last 7 days
+    cursor.execute("""
+        SELECT temperature
+        FROM temperature_history
+        WHERE timestamp >= datetime('now','-7 days')
+    """)
+    results = cursor.fetchall()
+    conn.close()
+
+    # Extract temperature values
+    temps = [row[0] for row in results if row[0] is not None]
+
+    # Handle empty database
+    if not temps:
+        return jsonify({"message": "No data available"}), 404
+
+    # Calculate statistics
+    stats = {
+        "weekly_average": round(statistics.mean(temps), 2),
+        "minimum": round(min(temps), 2),
+        "maximum": round(max(temps), 2)
+    }
+
+    return jsonify(stats)
+
 @app.route('/<path:path>')
 def serve(path):
     """Serve React app files from frontend/ReactApp directory"""
