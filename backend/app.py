@@ -12,10 +12,36 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
+
+# --- SECURITY CONFIGURATION ---
+# In a real app, move these to your .env file
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secret-agri40-key') 
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # 1 hour
+
+jwt = JWTManager(app)
+
+# Setup Rate Limiting to prevent Brute Force attacks
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# Temporary Mock User Database (Demonstrates Hashing)
+# Use generate_password_hash to create the stored version
+users = {
+    "admin": generate_password_hash("agri40_secure_pass")
+}
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -29,14 +55,33 @@ init_db()
 
 def run_background_services():
     def temperature_updater():
-        """Update temperature data continuously"""
+        """Adaptive Sampling: Simulates power saving by adjusting frequency based on data stability"""
+        last_temp = None
+        current_interval = 1 # Start at 1 second
+        max_interval = 60    # Max "sleep" of 60 seconds if data is stable
+        
         while True:
             try:
-                get_current_temperature()
-                time.sleep(1)
+                # 1. Fetch current temp
+                temp_data = get_current_temperature() 
+                current_temp = temp_data if isinstance(temp_data, (int, float)) else None
+                
+                # 2. Logic to adjust sampling rate
+                if last_temp is not None and current_temp == last_temp:
+                    # Data is stable, "sleep" longer (increase interval)
+                    current_interval = min(current_interval * 2, max_interval)
+                    print(f"[{datetime.now().isoformat()}] Temp stable at {current_temp}°C. Adaptive sleep increased to {current_interval}s")
+                else:
+                    # Data changed! Reset to high-frequency sampling
+                    current_interval = 1
+                    last_temp = current_temp
+                    print(f"[{datetime.now().isoformat()}] Temp changed/initial: {current_temp}°C. Sampling reset to {current_interval}s")
+
+                time.sleep(current_interval)
+                
             except Exception as e:
                 print(f"Error in temperature updater: {str(e)}")
-                time.sleep(1)
+                time.sleep(5)
     
     def scheduler():
         schedule.every().day.at("00:00").do(update_all_predictions)
@@ -67,6 +112,7 @@ def run_background_services():
     print("All background services started successfully")
 
 @app.route('/api/latest', methods=['GET'])
+@jwt_required()
 def get_latest_temperature():
     """Get the latest temperature reading and current hour's average"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -138,6 +184,7 @@ def get_latest_temperature():
         conn.close()
 
 @app.route('/api/history', methods=['GET'])
+@jwt_required()
 def get_temperature_history():
     """Get the last 10 individual temperature readings"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -193,6 +240,7 @@ def get_temperature_history():
         conn.close()
 
 @app.route('/api/weekly-stats', methods=['GET'])
+@jwt_required()
 def get_weekly_stats():
     try:
         latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -269,6 +317,7 @@ def get_weekly_stats():
         })
 
 @app.route('/api/predict', methods=['GET'])
+@jwt_required()
 def predict_temperature():
     """Get temperature predictions from database"""
     try:
@@ -432,6 +481,7 @@ def predict_for_day(day):
             pass
 
 @app.route('/api/forecast', methods=['GET'])
+@jwt_required()
 def get_forecast():
     """
     Get a comprehensive 5-day hourly forecast.
@@ -538,6 +588,41 @@ def get_forecast():
             "success": False,
             "error": str(e)
         })
+
+@app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Only 5 attempts allowed per minute
+def login():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+
+        user_hash = users.get(username)
+        
+        # Check if user exists and password matches the hash
+        if user_hash and check_password_hash(user_hash, password):
+            access_token = create_access_token(identity=username)
+            refresh_token = create_refresh_token(identity=username)
+            return jsonify({
+                "success": True,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "username": username
+            }), 200
+        
+        return jsonify({"success": False, "message": "Invalid credentials"}), 401
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/auth/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    """Allows users to get a new access token without logging in again"""
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity)
+    return jsonify(access_token=access_token), 200
+
 
 @app.after_request
 def add_header(response):
