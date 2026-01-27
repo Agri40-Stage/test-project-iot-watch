@@ -1,0 +1,314 @@
+{
+  "hourly_distribution": [
+    {
+      "average_temperature": 25.63,
+      "hour": "00:00",
+      "hour_number": 0,
+      "maximum_temperature": 29.63311167163081,
+      "minimum_temperature": 22.88615690011461,
+      "range": 6.75,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 23.97,
+      "hour": "01:00",
+      "hour_number": 1,
+      "maximum_temperature": 25.28692394530392,
+      "minimum_temperature": 22.39699630155526,
+      "range": 2.89,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.17,
+      "hour": "02:00",
+      "hour_number": 2,
+      "maximum_temperature": 27.434073925079783,
+      "minimum_temperature": 22.76902643447651,
+      "range": 4.67,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.56,
+      "hour": "03:00",
+      "hour_number": 3,
+      "maximum_temperature": 28.629452380919016,
+      "minimum_temperature": 22.384819891956887,
+      "range": 6.24,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.08,
+      "hour": "04:00",
+      "hour_number": 4,
+      "maximum_temperature": 27.561568080582514,
+      "minimum_temperature": 23.50345284963141,
+      "range": 4.06,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.45,
+      "hour": "05:00",
+      "hour_number": 5,
+      "maximum_temperature": 28.83640006934038,
+      "minimum_temperature": 22.834099374952164,
+      "range": 6.0,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.28,
+      "hour": "06:00",
+      "hour_number": 6,
+      "maximum_temperature": 26.959338694882057,
+      "minimum_temperature": 22.58505428090428,
+      "range": 4.37,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.31,
+      "hour": "07:00",
+      "hour_number": 7,
+      "maximum_temperature": 27.80910276240016,
+      "minimum_temperature": 22.827289454150794,
+      "range": 4.98,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 24.56,
+      "hour": "08:00",
+      "hour_number": 8,
+      "maximum_temperature": 26.358899096994946,
+      "minimum_temperature": 22.578611567889958,
+      "range": 3.78,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.64,
+      "hour": "09:00",
+      "hour_number": 9,
+      "maximum_temperature": 28.04891199061794,
+      "minimum_temperature": 23.672283641039833,
+      "range": 4.38,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 24.17,
+      "hour": "10:00",
+      "hour_number": 10,
+      "maximum_temperature": 27.42809630582035,
+      "minimum_temperature": 18.504694267924222,
+      "range": 8.92,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.02,
+      "hour": "11:00",
+      "hour_number": 11,
+      "maximum_temperature": 27.877653751852108,
+      "minimum_temperature": 22.79067499178542,
+      "range": 5.09,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 24.66,
+      "hour": "12:00",
+      "hour_number": 12,
+      "maximum_temperature": 27.41628415435096,
+      "minimum_temperature": 21.86756623953032,
+      "range": 5.55,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 16.64,
+      "hour": "13:00",
+      "hour_number": 13,
+      "maximum_temperature": 26.217843976418166,
+      "minimum_temperature": 16.5,
+      "range": 9.72,
+      "reading_count": 842
+    },
+    {
+      "average_temperature": 16.77,
+      "hour": "14:00",
+      "hour_number": 14,
+      "maximum_temperature": 29.015454572002177,
+      "minimum_temperature": 16.7,
+      "range": 12.32,
+      "reading_count": 2590
+    },
+    {
+      "average_temperature": 16.93,
+      "hour": "15:00",
+      "hour_number": 15,
+      "maximum_temperature": 26.206501598864893,
+      "minimum_temperature": 16.9,
+      "range": 9.31,
+      "reading_count": 1586
+    },
+    {
+      "average_temperature": 24.05,
+      "hour": "16:00",
+      "hour_number": 16,
+      "maximum_temperature": 26.044627941464107,
+      "minimum_temperature": 21.597484045816437,
+      "range": 4.45,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.25,
+      "hour": "17:00",
+      "hour_number": 17,
+      "maximum_temperature": 27.872811037169853,
+      "minimum_temperature": 23.77281833523071,
+      "range": 4.1,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.31,
+      "hour": "18:00",
+      "hour_number": 18,
+      "maximum_temperature": 27.492509480102253,
+      "minimum_temperature": 22.371159646027614,
+      "range": 5.12,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.35,
+      "hour": "19:00",
+      "hour_number": 19,
+      "maximum_temperature": 27.1119856561725,
+      "minimum_temperature": 23.169282580184202,
+      "range": 3.94,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.36,
+      "hour": "20:00",
+      "hour_number": 20,
+      "maximum_temperature": 27.819890702702768,
+      "minimum_temperature": 22.10979836439723,
+      "range": 5.71,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.17,
+      "hour": "21:00",
+      "hour_number": 21,
+      "maximum_temperature": 26.679285475563717,
+      "minimum_temperature": 22.48117327850565,
+      "range": 4.2,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.09,
+      "hour": "22:00",
+      "hour_number": 22,
+      "maximum_temperature": 27.072887133121935,
+      "minimum_temperature": 22.127603285743497,
+      "range": 4.95,
+      "reading_count": 7
+    },
+    {
+      "average_temperature": 25.45,
+      "hour": "23:00",
+      "hour_number": 23,
+      "maximum_temperature": 27.938374294511828,
+      "minimum_temperature": 22.06608872508353,
+      "range": 5.87,
+      "reading_count": 7
+    }
+  ],
+  "location": {
+    "city": "Agadir",
+    "latitude": 30.4202,
+    "longitude": -9.5982
+  },
+  "metadata": {
+    "data_freshness_minutes": 0.07,
+    "days_of_data": 8,
+    "first_reading": "2026-01-19T13:40:36.873065",
+    "is_data_fresh": true,
+    "last_reading": "2026-01-26T15:39:59.660126",
+    "total_readings": 5167
+  },
+  "period_statistics": {
+    "last_1h": {
+      "average_temperature": 16.86,
+      "maximum_temperature": 16.9,
+      "minimum_temperature": 16.8,
+      "period_hours": 1,
+      "reading_count": 2469,
+      "standard_deviation": 0.05,
+      "temperature_range": 0.1,
+      "variability_index": 0.28
+    },
+    "last_24h": {
+      "average_temperature": 16.8,
+      "maximum_temperature": 27.872811037169853,
+      "minimum_temperature": 16.5,
+      "period_hours": 24,
+      "reading_count": 5021,
+      "standard_deviation": 0.55,
+      "temperature_range": 11.37,
+      "variability_index": 3.27
+    },
+    "last_30d": {
+      "average_temperature": 17.04,
+      "maximum_temperature": 29.63311167163081,
+      "minimum_temperature": 16.5,
+      "period_hours": 720,
+      "reading_count": 5167,
+      "standard_deviation": 1.5,
+      "temperature_range": 13.13,
+      "variability_index": 8.79
+    },
+    "last_7d": {
+      "average_temperature": 17.03,
+      "maximum_temperature": 29.63311167163081,
+      "minimum_temperature": 16.5,
+      "period_hours": 168,
+      "reading_count": 5165,
+      "standard_deviation": 1.49,
+      "temperature_range": 13.13,
+      "variability_index": 8.76
+    }
+  },
+  "records": {
+    "all_time": {
+      "highest": {
+        "temperature": 29.63311167163081,
+        "timestamp": "2026-01-23T00:40:36.873065"
+      },
+      "lowest": {
+        "temperature": 16.5,
+        "timestamp": "2026-01-26T13:40:37.291052"
+      }
+    },
+    "today": {
+      "highest": 27.029090713883484,
+      "lowest": 16.5
+    }
+  },
+  "success": true,
+  "summary": {
+    "overall_status": "cool",
+    "recommendations": [
+      "Temperature very stable, ideal for sensitive processes",
+      "Temperature rising, monitor for overheating"
+    ],
+    "stability": "very_stable",
+    "trend": "up",
+    "trend_magnitude": "slow"
+  },
+  "timestamp": "2026-01-26T15:40:03.725535",
+  "trends": {
+    "current_hour": 16.900000000000404,
+    "hourly_change": 0.15,
+    "hourly_trend": "up",
+    "last_week_same_hour": null,
+    "previous_hour": 16.751741486068806,
+    "vs_last_week": null,
+    "vs_yesterday": null,
+    "yesterday_same_hour": null,
+    "yesterday_trend": null
+  }
+}
