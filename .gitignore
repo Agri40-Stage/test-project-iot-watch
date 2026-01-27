@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+venv310/
+backend/venv/
+backend/venv310/
+
+# Database
+*.db
+*.db-journal
+
+# Environment variables
+.env
+.env.local
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
