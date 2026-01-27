@@ -2,7 +2,8 @@ import requests
 import time
 from datetime import datetime
 from models import get_db_connection, DEFAULT_LATITUDE, DEFAULT_LONGITUDE
-from app import predict_for_day
+from services.predictor import predict_for_day
+
 
 def get_current_temperature():
     """Get current temperature from Open-Meteo Forecast API and store it in database"""

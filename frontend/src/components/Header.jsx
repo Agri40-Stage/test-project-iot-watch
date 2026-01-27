@@ -42,6 +42,7 @@ function Header() {
                 <ul className="hidden md:flex flex-row space-x-4 flex-1 justify-center items-center">
                     <li className="font-medium text-xl cursor-pointer"><Link to="/">Home</Link></li>
                     <li className="font-medium text-xl cursor-pointer"><Link to="/temperature">Temperature</Link></li>
+                    <li className="font-medium text-xl cursor-pointer"><Link to="/stats">Stats</Link></li>
                     <li className="font-medium text-xl cursor-pointer"><Link to="/humidity">Humidity</Link></li>
                 </ul>
                 {/* Buttons and light mode/dark mode toggle */}
@@ -67,6 +68,8 @@ function Header() {
                     <ul className="flex flex-col space-y-2">
                         <li className="font-medium text-lg"><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link></li>
                         <li className="font-medium text-lg"><Link to="/temperature" onClick={() => setMenuOpen(false)}>Temperature</Link></li>
+                        <li className="font-medium text-lg"><Link to="/stats" onClick={() => setMenuOpen(false)}>Stats</Link></li>
+                        
                         <li className="font-medium text-lg"><Link to="/humidity" onClick={() => setMenuOpen(false)}>Humidity</Link></li>
                     </ul>
                     <div className="flex flex-col space-y-2 mt-4">

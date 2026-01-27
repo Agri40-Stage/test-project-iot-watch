@@ -1,25 +1,41 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Python
+__pycache__/
+*.pyc
 
-node_modules
-dist
-dist-ssr
-*.local
+# Virtual environments
+venv/
+venv310/
+backend/venv/
+backend/venv310/
+
+# Database
+*.db
+*.db-journal
+
+# Env
 .env
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Node
+node_modules/
+
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+# Backend spécifique
+backend/venv/
+backend/venv310/
+backend/__pycache__/
+backend/*.db
+backend/*.db-journal
+
+# Frontend spécifique
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/build/
