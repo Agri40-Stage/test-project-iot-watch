@@ -5,8 +5,8 @@ import numpy as np
 from tensorflow.keras.models import load_model
 
 BASE_TEMP = 25.0
-DEFAULT_LATITUDE = 30.4202
-DEFAULT_LONGITUDE = -9.5982
+DEFAULT_LATITUDE = 30.42
+DEFAULT_LONGITUDE = -9.59
 
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'temperature.db')
