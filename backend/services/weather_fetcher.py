@@ -14,9 +14,7 @@ def get_current_temperature():
         params = {
             "latitude": DEFAULT_LATITUDE,
             "longitude": DEFAULT_LONGITUDE,
-            "current_weather": True,
-            "hourly": "temperature_2m",
-            "timezone": "auto"
+            "current_weather": True
         }
         
         # Make GET request

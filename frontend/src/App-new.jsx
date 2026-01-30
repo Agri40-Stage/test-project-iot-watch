@@ -15,71 +15,44 @@ import {
 } from 'lucide-react';
 
 function App() {
-  // Console banner
-  console.log('%c🌱 AGRI 4.0 - Smart Agriculture Watch System', 'color: #10b981; font-size: 20px; font-weight: bold;');
-  console.log('%c═══════════════════════════════════════════', 'color: #10b981;');
-  console.log('%cVersion: 2.0.0', 'color: #34d399;');
-  console.log('%cBackend API: http://localhost:5000/api/sensor', 'color: #2dd4bf;');
-  console.log('%cMode: Development', 'color: #f59e0b;');
-  console.log('%c═══════════════════════════════════════════', 'color: #10b981;');
-  
   const [sensorData, setSensorData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
   const fetchSensorData = async () => {
     try {
-      console.log('🔄 [API] Starting data fetch...');
       setLoading(!sensorData); // Only show loading on first load
       setError(null);
       
-      console.log('📡 [API] Fetching from: http://localhost:5000/api/sensor');
       const response = await fetch('http://localhost:5000/api/sensor');
-      
-      console.log(`📊 [API] Response status: ${response.status} ${response.statusText}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('✅ [API] Data received successfully:', data);
-      console.log('🌡️ [API] Temperature:', data.temperature, '°C');
-      console.log('💨 [API] Wind Speed:', data.windspeed, 'km/h');
-      console.log('📍 [API] Location:', data.location);
-      console.log('⚠️ [API] Status:', data.status);
-      
       setSensorData(data);
     } catch (err) {
-      console.error("❌ [API] Fetch error:", err);
-      console.error("🔴 [API] Error message:", err.message);
+      console.error("Fetch error:", err);
       setError(err.message);
     } finally {
-      console.log('🏁 [API] Fetch completed');
       setLoading(false);
       setRefreshing(false);
     }
   };
+
   useEffect(() => {
-    console.log('🚀 [APP] Component mounted - Starting initial data fetch');
     fetchSensorData();
     
     // Auto-refresh every 30 seconds
-    console.log('⏰ [APP] Setting up auto-refresh interval (30s)');
-    const interval = setInterval(() => {
-      console.log('🔄 [APP] Auto-refresh triggered');
-      fetchSensorData();
-    }, 30000);
+    const interval = setInterval(fetchSensorData, 30000);
     
-    return () => {
-      console.log('🛑 [APP] Component unmounted - Cleaning up interval');
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const handleRefresh = () => {
-    console.log('🔄 [USER] Manual refresh button clicked');
     setRefreshing(true);
     fetchSensorData();
   };
@@ -118,9 +91,9 @@ function App() {
       label: 'DANGER'
     }
   };
+
   // Loading State
   if (loading && !sensorData) {
-    console.log('⏳ [UI] Showing loading state');
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
         <motion.div
@@ -138,9 +111,9 @@ function App() {
       </div>
     );
   }
+
   // Error State
   if (error && !sensorData) {
-    console.log('❌ [UI] Showing error state:', error);
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
         <motion.div
@@ -171,12 +144,9 @@ function App() {
       </div>
     );
   }
+
   const status = statusConfig[sensorData?.status] || statusConfig.success;
   const StatusIcon = status.icon;
-
-  console.log('✅ [UI] Rendering dashboard with data');
-  console.log('🎨 [UI] Status configuration:', status.label);
-  console.log('🌡️ [UI] Temperature glow:', getTempGlow(sensorData?.temperature || 0));
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
