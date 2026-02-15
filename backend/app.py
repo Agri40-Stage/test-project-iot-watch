@@ -117,10 +117,13 @@ def get_latest_temperature():
         # Calculate trend
         trend = "stable"
         if prev_hour_avg and hour_stats:
-            if hour_stats['avg_temp'] > prev_hour_avg['avg_temp']:
-                trend = "up"
-            elif hour_stats['avg_temp'] < prev_hour_avg['avg_temp']:
-                trend = "down"
+            current_avg = hour_stats['avg_temp']
+            previous_avg = prev_hour_avg['avg_temp']
+            if current_avg is not None and previous_avg is not None:
+                if current_avg > previous_avg:
+                    trend = "up"
+                elif current_avg < previous_avg:
+                    trend = "down"
         
         return jsonify({
             "time": latest['timestamp'],
