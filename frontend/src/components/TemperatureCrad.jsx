@@ -47,10 +47,10 @@ const TemperatureCrad = ({ time, temperature, trend }) => {
   );
 };
 
-TemperatureCrad.PropTypes = {
-  time: PropTypes.string.isRequired,
-  temperature: PropTypes.number.isRequired,
-  trend: PropTypes.oneOf(["up","down","stable"]).isRequired,
+TemperatureCrad.propTypes = {
+  time: PropTypes.string,
+  temperature: PropTypes.number,
+  trend: PropTypes.oneOf(["up","down","stable"]),
 };
 
 export default TemperatureCrad;

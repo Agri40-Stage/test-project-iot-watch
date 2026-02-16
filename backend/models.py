@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timedelta
 import numpy as np
 from tensorflow.keras.models import load_model
+from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE_TEMP = 25.0
 DEFAULT_LATITUDE = 30.4202
@@ -62,6 +63,18 @@ def init_db():
         UNIQUE(target_date, hour, latitude, longitude)
     )
     ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE,
+        full_name TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    ''')
+
+    ensure_user_schema(conn)
     
     # Create index for faster querying
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON temperature_data(timestamp)')
@@ -79,6 +92,71 @@ def init_db():
     else:
         conn.close()
         purge_old_data()
+
+def ensure_user_schema(conn):
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+    if not cursor.fetchone():
+        return
+
+    cursor.execute("PRAGMA table_info(users)")
+    columns = {row["name"] for row in cursor.fetchall()}
+
+    if "email" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    if "full_name" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN full_name TEXT")
+
+    if "username" in columns:
+        cursor.execute("UPDATE users SET email = COALESCE(email, username)")
+        cursor.execute("UPDATE users SET full_name = COALESCE(full_name, username)")
+    else:
+        cursor.execute("UPDATE users SET email = COALESCE(email, 'unknown@example.com') WHERE email IS NULL OR email = ''")
+        cursor.execute("UPDATE users SET full_name = COALESCE(full_name, 'User') WHERE full_name IS NULL OR full_name = ''")
+
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+
+def create_user(email, password, full_name):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("PRAGMA table_info(users)")
+        columns = {row["name"] for row in cursor.fetchall()}
+        password_hash = generate_password_hash(password)
+        created_at = datetime.now().isoformat()
+        if "username" in columns:
+            cursor.execute('''
+            INSERT INTO users (username, email, full_name, password_hash, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            ''', (email, email, full_name, password_hash, created_at))
+        else:
+            cursor.execute('''
+            INSERT INTO users (email, full_name, password_hash, created_at)
+            VALUES (?, ?, ?, ?)
+            ''', (email, full_name, password_hash, created_at))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
+
+def get_user_by_email(email):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+def verify_user(email, password):
+    user = get_user_by_email(email)
+    if not user:
+        return None
+    if check_password_hash(user['password_hash'], password):
+        return user
+    return None
 
 def purge_old_data():
     """Purge data older than 10 days"""

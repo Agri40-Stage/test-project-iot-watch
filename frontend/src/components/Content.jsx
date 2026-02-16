@@ -37,10 +37,13 @@ const Content = () => {
   const getLatestTemperature = async () => {
     try {
       const data = await fetchLatestTemperature();
+      if (!data) {
+        return;
+      }
 
-      setLatestTemperatureTime(data.time);
-      setLatestTemperature(data.temperature);
-      setTemperatureTrend(data.trend);
+      setLatestTemperatureTime(data.time ?? null);
+      setLatestTemperature(data.temperature ?? null);
+      setTemperatureTrend(data.trend ?? "stable");
     } catch (error) {
       console.error("Error getting latest temperature: ", error);
     }
@@ -50,13 +53,16 @@ const Content = () => {
   const getTemperatureHistory = async () => {
     try {
       const data = await fetchTemperatureHistory();
+      if (!data) {
+        return;
+      }
 
       setTemperatureData({
-        labels: data.lastTimestamps,
+        labels: data.lastTimestamps ?? [],
         datasets: [
           {
             label: "Temperature Data",
-            data: data.lastTemperatures,
+            data: data.lastTemperatures ?? [],
             fill: false,
             borderColor: "#ff811f",
             tension: 0.1,

@@ -5,17 +5,23 @@ import sqlite3
 import schedule
 import numpy as np
 import pandas as pd
+import jwt
+from functools import wraps
 from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, g
 from services.weather_fetcher import *
 from models import *
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
+
+JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
+JWT_EXP_MINUTES = int(os.getenv("JWT_EXP_MINUTES", "60"))
+AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "true").lower() == "true"
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -26,6 +32,70 @@ last_prediction_time = None
 
 # Initialize database
 init_db()
+
+def generate_token(user):
+    payload = {
+        "sub": user["id"],
+        "email": user["email"],
+        "exp": datetime.utcnow() + timedelta(minutes=JWT_EXP_MINUTES)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+
+def auth_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not AUTH_REQUIRED:
+            return fn(*args, **kwargs)
+
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Missing or invalid Authorization header"}), 401
+
+        token = auth_header.split(" ", 1)[1].strip()
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            g.current_user = payload
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token"}), 401
+
+        return fn(*args, **kwargs)
+    return wrapper
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip()
+    password = data.get("password") or ""
+    full_name = (data.get("fullName") or "").strip()
+
+    if not email or not password or not full_name:
+        return jsonify({"error": "Email, password, and full name are required"}), 400
+
+    created = create_user(email, password, full_name)
+    if not created:
+        return jsonify({"error": "Email already exists"}), 409
+
+    user = get_user_by_email(email)
+    token = generate_token(user)
+    return jsonify({"token": token, "email": email})
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    user = verify_user(email, password)
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = generate_token(user)
+    return jsonify({"token": token, "email": email})
 
 def run_background_services():
     def temperature_updater():
@@ -67,6 +137,7 @@ def run_background_services():
     print("All background services started successfully")
 
 @app.route('/api/latest', methods=['GET'])
+@auth_required
 def get_latest_temperature():
     """Get the latest temperature reading and current hour's average"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -117,10 +188,13 @@ def get_latest_temperature():
         # Calculate trend
         trend = "stable"
         if prev_hour_avg and hour_stats:
-            if hour_stats['avg_temp'] > prev_hour_avg['avg_temp']:
-                trend = "up"
-            elif hour_stats['avg_temp'] < prev_hour_avg['avg_temp']:
-                trend = "down"
+            current_avg = hour_stats['avg_temp']
+            previous_avg = prev_hour_avg['avg_temp']
+            if current_avg is not None and previous_avg is not None:
+                if current_avg > previous_avg:
+                    trend = "up"
+                elif current_avg < previous_avg:
+                    trend = "down"
         
         return jsonify({
             "time": latest['timestamp'],
@@ -138,6 +212,7 @@ def get_latest_temperature():
         conn.close()
 
 @app.route('/api/history', methods=['GET'])
+@auth_required
 def get_temperature_history():
     """Get the last 10 individual temperature readings"""
     latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -193,6 +268,7 @@ def get_temperature_history():
         conn.close()
 
 @app.route('/api/weekly-stats', methods=['GET'])
+@auth_required
 def get_weekly_stats():
     try:
         latitude = request.args.get('latitude', DEFAULT_LATITUDE)
@@ -269,6 +345,7 @@ def get_weekly_stats():
         })
 
 @app.route('/api/predict', methods=['GET'])
+@auth_required
 def predict_temperature():
     """Get temperature predictions from database"""
     try:
@@ -432,6 +509,7 @@ def predict_for_day(day):
             pass
 
 @app.route('/api/forecast', methods=['GET'])
+@auth_required
 def get_forecast():
     """
     Get a comprehensive 5-day hourly forecast.
