@@ -1,7 +1,11 @@
 const fetchLatestTemperature = async () => {
   try {
+    const token = localStorage.getItem("authToken");
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/latest`
+      `${import.meta.env.VITE_API_URL}/api/latest`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      }
     );
 
     if (!response.ok) {
