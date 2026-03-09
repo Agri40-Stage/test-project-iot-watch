@@ -1,7 +1,10 @@
+import { API_URL } from '../config';
+
 const fetchTemperatureHistory = async () => {
+  
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}?latitude=30.4202&longitude=-9.5982&forecast_days=1&timezone=auto&hourly=temperature_2m`
+      `${API_URL}?latitude=30.4202&longitude=-9.5982&forecast_days=1&timezone=auto&hourly=temperature_2m`
     );
 
     if (!response.ok) {

@@ -10,9 +10,10 @@ import Home from './pages/Home';
 
 function App() {
 
-  return (
 
+  return (
     
+  
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/temperature" element={<Temperature />} />
@@ -20,7 +21,7 @@ function App() {
       </Routes>
     
     
-  )
+  );
 }
 
 export default App;

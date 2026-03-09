@@ -3,8 +3,8 @@ import React from 'react';
 /* Components */
 import Content from '../components/Content';
 import Header from '../components/Header';
-// import TemperaturePrediction from '../components/TemperaturePrediction';
-// import WeeklyStats from '../components/WeeklyStats';
+//import TemperaturePrediction from '../components/TemperaturePrediction';
+//import WeeklyStats from '../components/WeeklyStats';
 
 function Temperature(){
     return(
