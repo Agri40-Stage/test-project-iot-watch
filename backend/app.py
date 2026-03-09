@@ -17,6 +17,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+
+
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
 CACHE_DURATION = 600
@@ -65,6 +67,7 @@ def run_background_services():
     print(f"Prediction updates scheduled (daily at midnight)")
     
     print("All background services started successfully")
+
 
 @app.route('/api/latest', methods=['GET'])
 def get_latest_temperature():
@@ -193,6 +196,7 @@ def get_temperature_history():
         conn.close()
 
 @app.route('/api/weekly-stats', methods=['GET'])
+
 def get_weekly_stats():
     try:
         latitude = request.args.get('latitude', DEFAULT_LATITUDE)

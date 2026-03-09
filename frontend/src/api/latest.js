@@ -1,7 +1,9 @@
+import { API_URL } from '../config';
+
 const fetchLatestTemperature = async () => {
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}?latitude=30.4202&longitude=-9.5982&current_weather=true&timezone=auto`
+      `${API_URL}?latitude=30.4202&longitude=-9.5982&current_weather=true&timezone=auto`
     );
 
     if (!response.ok) {
@@ -12,7 +14,23 @@ const fetchLatestTemperature = async () => {
       // Extract the relevant data from the response
       const time = data.current_weather.time;
       const temperature = data.current_weather.temperature;
-
+    //   //anomaly detection 
+    //   let status = "";
+    //   let message = "";
+  
+    //   if (temperature >35){
+    //     status = "High";
+    //     message = "High Temperature detected !";
+    //     console.warn(`Anomaly detected: Temperature of ${temperature}°C at ${time}`);
+    //  }
+    //  else if (temperature <10){
+    //     status = "Low";
+    //     message = "Low Temperature detected !";
+    //     console.warn(`Anomaly detected: Temperature of ${temperature}°C at ${time}`);
+    //  }else {
+    //     status = "Normal";
+    //     message = "Temperature level is normal.";
+    //  }
       // Store the latest temperature in local storage for trend calculation
       // So in the next fetch, we can compare the latest temperature with the previous one
       // and determine if the temperature is rising, falling, or stable

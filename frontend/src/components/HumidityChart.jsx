@@ -15,6 +15,9 @@ const HumidityChart = () => {
     // State for chart data and dark mode
     const [humidityData, setHumidityData] = useState(null);
     const [isDark, setIsDark] = useState(getInitialDark());
+    const [alertType, setAlertType] = useState(null);
+    
+    const [alertMessage,setAlertMessage]=useState(null);
 
     // Listen for changes to the body's class (dark mode toggle)
     useEffect(() => {
@@ -37,6 +40,19 @@ const HumidityChart = () => {
                 if (data.daily && data.daily.time && data.daily.relative_humidity_2m_max) { 
                     //this variable give us the 7 past humidity values in the past 7 days
                     const humidity = data.daily.relative_humidity_2m_max.slice(0, 7);
+                    const latestHumidity = humidity[humidity.length - 1];
+
+                    if (latestHumidity > 85){
+                      setAlertMessage("High Humidity detected!");
+                      setAlertType("high");
+                    }
+                    else if (latestHumidity < 20) {
+                      setAlertMessage("Low Humidity detected!");
+                      setAlertType("low");
+                    }else {
+                      setAlertMessage("Humidity level is normal.");
+                      setAlertType("normal");
+                    }
                     //this variable will give us the 7 past days related to the 7 past humidity values 
                     const weekDays = data.daily.time.slice(0,7);
                     console.log(weekDays)
@@ -102,6 +118,18 @@ const HumidityChart = () => {
     return ( 
         <div className="flex justify-center items-center min-h-1/2 w-4xl">
             <div className="w-full h-full">
+              {alertMessage && (
+                <div className={`text-center mb-4 p-4 rounded-lg font-semibold border shadow-md transition-all duration-300
+                  ${
+                  alertType === "high" 
+                  ? "bg-red-100 text-red-500 border-red-400" 
+                  :alertType === "low" ? "bg-yellow-100 text-yellow-500 border-yellow-400" 
+                  :"bg-green-100 text-green-500 border-green-400"
+                }
+                `}>
+                    {alertMessage}
+                </div>
+              )}
                 {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading...</p>}
             </div>
         </div>
