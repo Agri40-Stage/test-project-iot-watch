@@ -539,6 +539,126 @@ def get_forecast():
             "error": str(e)
         })
 
+@app.route('/api/sensor-data', methods=['POST'])
+def receive_sensor_data():
+    """
+    Endpoint for IoT devices (ESP32, Arduino, Raspberry Pi)
+    to send temperature measurements to the backend.
+
+    This makes the system compatible with real sensors,
+    instead of only relying on external APIs like Open-Meteo.
+    """
+
+    data = request.json
+
+    # Validate request
+    if not data or "temperature" not in data:
+        return jsonify({"error": "temperature field required"}), 400
+
+    temperature = data.get("temperature")
+    device_id = data.get("device_id", "unknown-device")
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO temperature_data
+            (timestamp, temperature, latitude, longitude)
+            VALUES (?, ?, ?, ?)
+        """, (
+            datetime.now().isoformat(),
+            temperature,
+            DEFAULT_LATITUDE,
+            DEFAULT_LONGITUDE
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "status": "success",
+            "device_id": device_id,
+            "temperature": temperature
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/anomaly', methods=['GET'])
+def anomaly():
+    """
+    Detect temperature anomalies from the most recent readings.
+
+    Uses Z-score anomaly detection:
+        z = (x - mean) / std
+
+    If |z| > threshold → anomaly detected.
+    """
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Get last 10 temperature readings
+        cursor.execute("""
+            SELECT temperature
+            FROM temperature_data
+            ORDER BY timestamp DESC
+            LIMIT 10
+        """)
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        temps = [row["temperature"] for row in rows]
+
+        if len(temps) < 2:
+            return jsonify({
+                "status": "insufficient_data",
+                "message": "Not enough temperature readings to detect anomalies."
+            })
+
+        mean = float(np.mean(temps))
+        std = float(np.std(temps))
+
+        # Prevent division by zero
+        if std == 0:
+            return jsonify({
+                "status": "no_variation",
+                "message": "Temperature readings have no variation.",
+                "mean": mean,
+                "std": std
+            })
+
+        threshold = 2
+
+        anomalies = []
+        for temp in temps:
+            z_score = (temp - mean) / std
+
+            if abs(z_score) > threshold:
+                anomalies.append({
+                    "temperature": temp,
+                    "z_score": float(z_score)
+                })
+
+        return jsonify({
+            "temperatures": temps,
+            "mean": mean,
+            "std": std,
+            "threshold": threshold,
+            "anomalies": anomalies
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
 @app.after_request
 def add_header(response):
     """Add headers to prevent caching for real-time data"""
@@ -561,4 +681,4 @@ def serve(path):
 
 if __name__ == "__main__":
     run_background_services()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5001)
