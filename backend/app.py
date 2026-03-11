@@ -585,6 +585,80 @@ def receive_sensor_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/anomaly', methods=['GET'])
+def anomaly():
+    """
+    Detect temperature anomalies from the most recent readings.
+
+    Uses Z-score anomaly detection:
+        z = (x - mean) / std
+
+    If |z| > threshold → anomaly detected.
+    """
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Get last 10 temperature readings
+        cursor.execute("""
+            SELECT temperature
+            FROM temperature_data
+            ORDER BY timestamp DESC
+            LIMIT 10
+        """)
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        temps = [row["temperature"] for row in rows]
+
+        if len(temps) < 2:
+            return jsonify({
+                "status": "insufficient_data",
+                "message": "Not enough temperature readings to detect anomalies."
+            })
+
+        mean = float(np.mean(temps))
+        std = float(np.std(temps))
+
+        # Prevent division by zero
+        if std == 0:
+            return jsonify({
+                "status": "no_variation",
+                "message": "Temperature readings have no variation.",
+                "mean": mean,
+                "std": std
+            })
+
+        threshold = 2
+
+        anomalies = []
+        for temp in temps:
+            z_score = (temp - mean) / std
+
+            if abs(z_score) > threshold:
+                anomalies.append({
+                    "temperature": temp,
+                    "z_score": float(z_score)
+                })
+
+        return jsonify({
+            "temperatures": temps,
+            "mean": mean,
+            "std": std,
+            "threshold": threshold,
+            "anomalies": anomalies
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
 @app.after_request
 def add_header(response):
     """Add headers to prevent caching for real-time data"""
