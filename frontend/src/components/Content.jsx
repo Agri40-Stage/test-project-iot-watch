@@ -8,6 +8,9 @@ import Header from "../components/Header";
 /* API */
 import fetchLatestTemperature from "../api/latest";
 import fetchTemperatureHistory from "../api/history";
+import { io } from "socket.io-client";
+
+const socket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000");
 
 const Content = () => {
   // states to store the latest temperature data
@@ -68,22 +71,25 @@ const Content = () => {
     }
   }
 
-  // Auto-refresh every 10 seconds
   useEffect(() => {
     getLatestTemperature();
     getTemperatureHistory();
 
-    const interval = setInterval(() => {
-      getLatestTemperature();
+    socket.on("temperature_update", (data) => {
+      setLatestTemperatureTime(data.time);
+      setLatestTemperature(data.temperature);
+      // Let history polling or chart update handled dynamically, or just fetch history again on major updates
       getTemperatureHistory();
-    }, 10000);
+    });
 
-    return () => clearInterval(interval);
+    return () => {
+      socket.off("temperature_update");
+    };
   }, []);
 
 
   return (
-    
+
     <div className="flex flex-col gap-8 py-12 px-6">
       <div className="w-full flex flex-col gap-2 text-left">
         <h1 className="font-bold text-3xl">
