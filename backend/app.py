@@ -10,12 +10,14 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
+from flask_socketio import SocketIO, emit
 from services.weather_fetcher import *
 from models import *
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -32,7 +34,11 @@ def run_background_services():
         """Update temperature data continuously"""
         while True:
             try:
-                get_current_temperature()
+                temp = get_current_temperature()
+                socketio.emit('temperature_update', {
+                    'temperature': temp,
+                    'time': datetime.now().isoformat()
+                })
                 time.sleep(1)
             except Exception as e:
                 print(f"Error in temperature updater: {str(e)}")
@@ -561,4 +567,4 @@ def serve(path):
 
 if __name__ == "__main__":
     run_background_services()
-    app.run(host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
