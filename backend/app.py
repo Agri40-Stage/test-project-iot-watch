@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
 from services.weather_fetcher import *
 from models import *
+from services.anomaly_detector import detect_anomalies 
 
 load_dotenv()
 app = Flask(__name__)
@@ -29,14 +30,14 @@ init_db()
 
 def run_background_services():
     def temperature_updater():
-        """Update temperature data continuously"""
+        """Update temperature data every 5 minutes"""
         while True:
             try:
                 get_current_temperature()
-                time.sleep(1)
+                time.sleep(300)
             except Exception as e:
                 print(f"Error in temperature updater: {str(e)}")
-                time.sleep(1)
+                time.sleep(300)
     
     def scheduler():
         schedule.every().day.at("00:00").do(update_all_predictions)
@@ -186,11 +187,54 @@ def get_temperature_history():
             "isHourlyAverage": False
         })
         
-    except Exception as e:
-        print(f"Error getting temperature history: {str(e)}")
-        return jsonify({"error": str(e)})
+    
     finally:
         conn.close()
+
+
+# anomalie part
+
+@app.route('/api/anomalies', methods=['GET'])
+def get_anomalies():
+    """Detect anomalies in temperature history using Z-score + IsolationForest"""
+    try:
+        latitude  = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        limit     = int(request.args.get('limit', 100))
+
+        conn   = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('''
+        SELECT timestamp, temperature
+        FROM temperature_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT ?
+        ''', (latitude, longitude, limit))
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            return jsonify({
+                "success": False,
+                "message": "No temperature data found in database",
+                "anomalies": []
+            })
+
+        # Chronological order
+        rows         = rows[::-1]
+        temperatures = [float(row['temperature']) for row in rows]
+        timestamps   = [row['timestamp'] for row in rows]
+
+        result = detect_anomalies(temperatures, timestamps)
+        return jsonify(result)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
