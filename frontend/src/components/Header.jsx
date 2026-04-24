@@ -46,8 +46,6 @@ function Header() {
                 </ul>
                 {/* Buttons and light mode/dark mode toggle */}
                 <div className="hidden md:flex flex-row space-x-4 flex-1 justify-end items-center">
-                    <button className="bg-green-500 rounded-b-xl text-white px-4 py-2"><span>Say Hello!</span></button>
-                    <button className="bg-green-400 rounded-b-xl text-white px-4 py-2"><span>Contact Us!</span></button>
                     <button
                         className="ml-2 p-2 rounded-full border-2 border-green-500 text-green-500 hover:bg-green-50 transition"
                         onClick={() => setDark((d) => !d)}
@@ -69,10 +67,6 @@ function Header() {
                         <li className="font-medium text-lg"><Link to="/temperature" onClick={() => setMenuOpen(false)}>Temperature</Link></li>
                         <li className="font-medium text-lg"><Link to="/humidity" onClick={() => setMenuOpen(false)}>Humidity</Link></li>
                     </ul>
-                    <div className="flex flex-col space-y-2 mt-4">
-                        <button className="bg-green-500 rounded-b-xl text-white px-4 py-2">Say Hello!</button>
-                        <button className="bg-green-400 rounded-b-xl text-white px-4 py-2">Contact Us!</button>
-                    </div>
                 </div>
             )}
         </header>

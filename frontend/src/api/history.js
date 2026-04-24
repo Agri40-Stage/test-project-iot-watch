@@ -1,36 +1,31 @@
 const fetchTemperatureHistory = async () => {
   try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}?latitude=30.4202&longitude=-9.5982&forecast_days=1&timezone=auto&hourly=temperature_2m`
-    );
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=30.4202&longitude=-9.5982&forecast_days=1&timezone=auto&hourly=temperature_2m`;
+    const response = await fetch(url);
 
     if (!response.ok) {
-      console.error("Error fetching temperature history:", response.statusText);
-    } else if (response.status === 200) {
-      const data = await response.json();
-
-      // Extract the relevant data from the response
-      const timestamps = data.hourly.time;
-      const temperatures = data.hourly.temperature_2m;
-
-      // Calculate the last 10 hours
-      const startTime = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
-
-      // Find the index of the timestamp that is equal or greater than (approximately equal) the start time
-      const startIndex = timestamps.findIndex((timestamp) => new Date(timestamp) >= new Date(startTime));
-
-      // Slice only the last 10 hours of data to be returned and dispalyed in the chart
-      const lastTimestamps = timestamps.slice(startIndex, startIndex + 10);
-      const lastTemperatures = temperatures.slice(startIndex, startIndex + 10);
-
-      return {
-        lastTimestamps,
-        lastTemperatures,
-      };
+      console.error("Error fetching history:", response.statusText);
+      return { lastTimestamps: [], lastTemperatures: [] };
     }
+
+    const data = await response.json();
+    const timestamps = data.hourly.time;
+    const temperatures = data.hourly.temperature_2m;
+
+    // On prend les 10 dernières heures à partir de "maintenant"
+    const now = new Date();
+    const startIndex = timestamps.findIndex((t) => new Date(t) >= now) - 10;
+    
+    // Sécurité : on s'assure que startIndex n'est pas négatif
+    const actualStart = startIndex < 0 ? 0 : startIndex;
+
+    const lastTimestamps = timestamps.slice(actualStart, actualStart + 10);
+    const lastTemperatures = temperatures.slice(actualStart, actualStart + 10);
+
+    return { lastTimestamps, lastTemperatures };
   } catch (error) {
-    console.error("Error fetching temperature history:", error);
-    throw error;
+    console.error("Error fetching history:", error);
+    return { lastTimestamps: [], lastTemperatures: [] };
   }
 };
 
