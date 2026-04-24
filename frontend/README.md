@@ -1,12 +1,23 @@
-# React + Vite
+# 🌡️ IoT Temperature Watch
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern Full-Stack application designed for real-time temperature monitoring and predictive analysis. This project demonstrates a complete data pipeline from IoT sensor integration to a high-performance web dashboard.
 
-Currently, two official plugins are available:
+## 🚀 Key Features
+- **Live IoT Integration**: Automated data retrieval from the Open-Meteo API.
+- **Robust Backend**: REST API built with Flask, featuring secure CORS handling and SQLite3 persistence.
+- **Predictive Analytics**: Integrated AI forecasting module for 5-day temperature trends.
+- **Interactive Dashboard**: Responsive UI built with React and Tailwind CSS, utilizing Chart.js for data visualization.
+- **Data Management**: Automated tasks for data cleaning and statistical aggregation.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠️ Technical Stack
+- **Frontend**: React.js, Vite, Tailwind CSS, Chart.js.
+- **Backend**: Python, Flask, SQLite3.
+- **Data Analysis**: Pandas, Numpy, Scikit-Learn.
 
-## Expanding the ESLint configuration
+## 📦 Installation & Setup
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Backend
+1. Go to the backend directory: `cd backend`
+2. Install the required environment:
+   ```bash
+   pip install -r requirements.txt

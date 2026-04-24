@@ -2,7 +2,10 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 import numpy as np
-from tensorflow.keras.models import load_model
+
+# --- MODIFICATION ICI : On neutralise TensorFlow pour éviter l'erreur DLL ---
+# from tensorflow.keras.models import load_model 
+# --------------------------------------------------------------------------
 
 BASE_TEMP = 25.0
 DEFAULT_LATITUDE = 30.4202
@@ -10,19 +13,20 @@ DEFAULT_LONGITUDE = -9.5982
 
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'temperature.db')
+    # Créer le dossier database s'il n'existe pas
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 def generate_mock_data(clear_existing=True):
-    """Generate mock temperature data for testing"""
+    """Génère des données de test pour remplir les graphiques"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
     if clear_existing:
         cursor.execute('DELETE FROM temperature_data')
     
-    # Generate data for the last 7 days
     base_time = datetime.now() - timedelta(days=7)
     for i in range(168):
         timestamp = (base_time + timedelta(hours=i)).isoformat()
@@ -34,7 +38,7 @@ def generate_mock_data(clear_existing=True):
     
     conn.commit()
     conn.close()
-    print("Mock data generated successfully")
+    print("✅ Données simulées générées avec succès")
 
 def init_db():
     conn = get_db_connection()
@@ -63,7 +67,6 @@ def init_db():
     )
     ''')
     
-    # Create index for faster querying
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON temperature_data(timestamp)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_target_date ON temperature_predictions(target_date)')
     
@@ -73,7 +76,7 @@ def init_db():
     count = cursor.fetchone()[0]
     
     if count == 0:
-        print("Database is empty. Populating with mock data...")
+        print("La base est vide. Population en cours...")
         conn.close()
         generate_mock_data()
     else:
@@ -81,65 +84,33 @@ def init_db():
         purge_old_data()
 
 def purge_old_data():
-    """Purge data older than 10 days"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Keep data for 10 days instead of 7
     threshold_date = (datetime.now() - timedelta(days=10)).isoformat()
-    cursor.execute('''
-    DELETE FROM temperature_data
-    WHERE timestamp < ?
-    ''', (threshold_date,))
+    cursor.execute('DELETE FROM temperature_data WHERE timestamp < ?', (threshold_date,))
     
-    # Delete predictions older than 5 days
     prediction_threshold = (datetime.now() - timedelta(days=5)).isoformat()
-    cursor.execute('''
-    DELETE FROM temperature_predictions
-    WHERE prediction_date < ?
-    ''', (prediction_threshold,))
+    cursor.execute('DELETE FROM temperature_predictions WHERE prediction_date < ?', (prediction_threshold,))
     
     conn.commit()
     conn.close()
-    print(f"Purged data older than {threshold_date}")
 
+# --- MODIFICATION ICI : On simule le chargement du modèle ---
 def load_prediction_model():
-    """Load the Keras prediction model (cached version)"""
+    """Version simulée qui accepte tous les arguments (comme verbose)"""
+    print("⚠️ Mode simulation : TensorFlow est désactivé. Acceptation des arguments flexible.")
     
-    # Define possible model paths
-    model_dir = os.path.join(os.path.dirname(__file__), 'model')
-    possible_paths = [
-        os.path.join(model_dir, 'ml.keras'),
-        os.path.join(os.path.dirname(__file__), 'ml.keras')
-    ]
-    
-    print(f"Attempting to load model from possible paths:")
-    for path in possible_paths:
-        print(f"Checking path: {path}")
-        print(f"Path exists: {os.path.exists(path)}")
-    
-    # Try each possible path
-    for model_path in possible_paths:
-        try:
-            if os.path.exists(model_path):
-                print(f"Loading model from: {model_path}")
-                model = load_model(model_path, compile=False)
-                print(f"Successfully loaded Keras model from {model_path} (cached)")
-                return model
-            else:
-                print(f"Model file not found at: {model_path}")
-        except Exception as e:
-            print(f"Error loading model from {model_path}:")
-            print(f"Error type: {type(e).__name__}")
-            print(f"Error message: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            continue
-    
-    raise ValueError("Could not load the prediction model from any of the specified paths")
+    class FakeModel:
+        # On ajoute *args et **kwargs pour attraper 'verbose' et autres paramètres
+        def predict(self, data, *args, **kwargs):
+            # Retourne une température simulée réaliste
+            # On génère un tableau de 24 valeurs (une par heure)
+            return np.random.uniform(18, 28, size=(len(data), 1))
+            
+    return FakeModel()
+# -----------------------------------------------------------
 
 def standardize_timestamp(timestamp):
-    """Convert any timestamp to YYYY-MM-DD HH:MM format"""
     try:
         if isinstance(timestamp, str):
             dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))

@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 /* Components */
 import TemperatureCrad from "../components/TemperatureCrad";
 import TemperatureChart from "../components/TemperatureChart";
-import Header from "../components/Header";
 
 /* API */
 import fetchLatestTemperature from "../api/latest";
@@ -33,42 +32,53 @@ const Content = () => {
     }
   });
 
-  // Function to fetch the latest temperature
-  const getLatestTemperature = async () => {
+  // --- FONCTIONS DE FETCH CORRIGÉES ---
+
+const getLatestTemperature = async () => {
     try {
       const data = await fetchLatestTemperature();
+      console.log("Étape 1 - Données brutes reçues :", data); 
 
-      setLatestTemperatureTime(data.time);
-      setLatestTemperature(data.temperature);
-      setTemperatureTrend(data.trend);
+      if (data) {
+        // Vérifions si les clés existent vraiment
+        console.log("Étape 2 - Température extraite :", data.temperature);
+        console.log("Étape 2 - Temps extrait :", data.time);
+
+        setLatestTemperatureTime(data.time || data.timestamp);
+        setLatestTemperature(data.temperature || data.value);
+        setTemperatureTrend(data.trend);
+      } else {
+        console.warn("Étape 1 bis - L'API a répondu mais la donnée est vide.");
+      }
     } catch (error) {
-      console.error("Error getting latest temperature: ", error);
+      console.error("Étape 0 - L'appel API a totalement échoué :", error);
     }
-  }
+  };
 
-  // Function to fetch the temperature history for the last 10 hours
-  const getTemperatureHistory = async () => {
-    try {
-      const data = await fetchTemperatureHistory();
+const getTemperatureHistory = async () => {
+  try {
+    const data = await fetchTemperatureHistory();
+    console.log("Données reçues dans Content :", data);
 
-      setTemperatureData({
-        labels: data.lastTimestamps,
-        datasets: [
-          {
-            label: "Temperature Data",
-            data: data.lastTemperatures,
-            fill: false,
-            borderColor: "#ff811f",
-            tension: 0.1,
-          },
-        ],
-      });
-    } catch (error) {
-      console.error("Error getting temperature history: ", error);
+    if (data && data.lastTimestamps) {
+      setTemperatureData(prev => ({
+        ...prev,
+        labels: data.lastTimestamps.map(t => new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})),
+        datasets: [{
+          ...prev.datasets[0],
+          data: data.lastTemperatures,
+        }]
+      }));
     }
+  } catch (error) {
+    console.error("Erreur graphique :", error);
   }
+};
 
-  // Auto-refresh every 10 seconds
+
+
+  // --- CYCLE DE VIE ---
+
   useEffect(() => {
     getLatestTemperature();
     getTemperatureHistory();
@@ -81,12 +91,10 @@ const Content = () => {
     return () => clearInterval(interval);
   }, []);
 
-
   return (
-    
     <div className="flex flex-col gap-8 py-12 px-6">
       <div className="w-full flex flex-col gap-2 text-left">
-        <h1 className="font-bold text-3xl">
+        <h1 className="font-bold text-3xl dark:text-white">
           Temperature Dashboard
         </h1>
         <p className="text-sm font-light text-gray-400">
@@ -107,7 +115,7 @@ const Content = () => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Content;
