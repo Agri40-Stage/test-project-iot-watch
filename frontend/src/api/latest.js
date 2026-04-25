@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; 
+import { API_BASE_URL } from '../config';
 
 const fetchLatestTemperature = async () => {
   try {
@@ -10,7 +10,7 @@ const fetchLatestTemperature = async () => {
   } catch (error) {
     console.error("Error fetching latest temperature:", error);
     // Return a nullish state so the UI can handle it gracefully
-    return { time: "N/A", temperature: "N/A", trend: "stable" };
+    return { time: null, temperature: null, trend: "stable" };
   }
 };
 

@@ -5,9 +5,11 @@ import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUp, Thermometer } from "lucide-react";
 
 const TemperatureCrad = ({ time, temperature, trend }) => {
-  
-  const formattedTemperature = temperature && !isNaN(temperature) ? parseFloat(temperature).toFixed(1) : "N/A";
-  const lastUpdated = time ? new Date(time).toLocaleTimeString() : "...";
+  const isValidTemperature = temperature !== null && temperature !== undefined && !Number.isNaN(Number(temperature));
+  const formattedTemperature = isValidTemperature ? parseFloat(temperature).toFixed(1) : "N/A";
+
+  const parsedTime = time ? new Date(time) : null;
+  const lastUpdated = parsedTime && !Number.isNaN(parsedTime.getTime()) ? parsedTime.toLocaleTimeString() : "...";
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
@@ -53,7 +55,7 @@ const TemperatureCrad = ({ time, temperature, trend }) => {
 
 TemperatureCrad.propTypes = {
   time: PropTypes.string,
-  temperature: PropTypes.number,
+  temperature: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   trend: PropTypes.oneOf(["up", "down", "stable"]),
 };
 
