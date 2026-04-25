@@ -33,8 +33,15 @@ def generate_mock_data(clear_existing=True):
         humidity = BASE_HUMIDITY + weekly_humidity_cycle + daily_humidity_cycle + np.random.normal(0, 2)
         humidity = max(20, min(95, humidity)) # Keep in realistic range
 
-        cursor.execute('INSERT INTO temperature_data ...', (timestamp, temperature, ...))
-        cursor.execute('INSERT INTO humidity_data ...', (timestamp, humidity, ...))
+        cursor.execute('''
+            INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
+            VALUES (?, ?, ?, ?)
+        ''', (timestamp, temperature, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+
+        cursor.execute('''
+            INSERT INTO humidity_data (timestamp, humidity, latitude, longitude)
+            VALUES (?, ?, ?, ?)
+        ''', (timestamp, humidity, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
 
     conn.commit()
     conn.close()

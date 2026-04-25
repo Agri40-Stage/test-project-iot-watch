@@ -18,7 +18,8 @@ def update_all_predictions():
             "latitude": DEFAULT_LATITUDE,
             "longitude": DEFAULT_LONGITUDE,
             "hourly": "temperature_2m",
-            "forecast_days": 5 
+            "forecast_days": 5,
+            "timezone": "auto"
         }
         response = requests.get(url, params=params)
         response.raise_for_status()
