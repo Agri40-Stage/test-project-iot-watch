@@ -15,49 +15,53 @@ def fetch_and_store_current_weather():
         params = {
             "latitude": DEFAULT_LATITUDE,
             "longitude": DEFAULT_LONGITUDE,
-            "current": ["temperature_2m", "relative_humidity_2m"],
+            "hourly": "temperature_2m,relativehumidity_2m",
+            "forecast_days": 1,
             "timezone": "auto"
         }
         response = requests.get(url, params=params)
         response.raise_for_status()
         
         data = response.json()
+        hourly = data.get("hourly", {})
+        timestamps = hourly.get("time", [])
+        temperatures = hourly.get("temperature_2m", [])
+        humidities = hourly.get("relativehumidity_2m", [])
+
+        if not timestamps or not temperatures or not humidities:
+            raise ValueError("Could not get current weather data from API response")
+
+        # Use the latest available hour from the forecast response
+        current_index = -1
+        timestamp = timestamps[current_index]
+        current_temp = float(temperatures[current_index])
+        current_humidity = float(humidities[current_index])
+
+        current_temp += random.uniform(-0.15, 0.15)
+        current_humidity += random.uniform(-0.5, 0.5)
+        current_humidity = max(0, min(100, current_humidity))
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        if "current" in data:
-            current_weather = data["current"]
-            current_temp = current_weather["temperature_2m"]
-            current_humidity = current_weather["relative_humidity_2m"]
-            timestamp = datetime.now().isoformat()
+        try:
+            cursor.execute('''
+            INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
+            VALUES (?, ?, ?, ?)
+            ''', (timestamp, current_temp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+            print(f"[{timestamp}] Temperature stored: {current_temp:.2f}°C")
             
-            current_temp += random.uniform(-0.15, 0.15)
-            current_humidity += random.uniform(-0.5, 0.5)
-            current_humidity = max(0, min(100, current_humidity))
+            cursor.execute('''
+            INSERT INTO humidity_data (timestamp, humidity, latitude, longitude)
+            VALUES (?, ?, ?, ?)
+            ''', (timestamp, current_humidity, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
+            print(f"[{timestamp}] Humidity stored: {current_humidity:.2f}%")
 
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            try:
-                # Store temperature
-                cursor.execute('''
-                INSERT INTO temperature_data (timestamp, temperature, latitude, longitude)
-                VALUES (?, ?, ?, ?)
-                ''', (timestamp, current_temp, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-                print(f"[{timestamp}] Temperature stored: {current_temp:.2f}°C")
-                
-                # Store humidity
-                cursor.execute('''
-                INSERT INTO humidity_data (timestamp, humidity, latitude, longitude)
-                VALUES (?, ?, ?, ?)
-                ''', (timestamp, current_humidity, DEFAULT_LATITUDE, DEFAULT_LONGITUDE))
-                print(f"[{timestamp}] Humidity stored: {current_humidity:.2f}%")
+            conn.commit()
+        finally:
+            conn.close()
 
-                conn.commit()
-            finally:
-                conn.close()
-            
-            return {"temperature": current_temp, "humidity": current_humidity}
-            
-        raise ValueError("Could not get current weather data from API response")
+        return {"temperature": current_temp, "humidity": current_humidity}
             
     except requests.exceptions.RequestException as e:
         print(f"Error making request to weather API: {str(e)}")

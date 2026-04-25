@@ -29,7 +29,7 @@ def get_latest_temperature():
             weather_data = fetch_and_store_current_weather()
             return jsonify({
                 "time": datetime.now().isoformat(),
-                "temperature": weather_data.get("temperature") if weather_data else "N/A",
+                "temperature": weather_data.get("temperature") if weather_data else None,
                 "trend": "stable",
                 "is_live": True
             })
