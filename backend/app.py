@@ -6,19 +6,21 @@ from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from db.schema import init_db
 from db.maintenance import purge_old_data
 from services.weather_fetcher import fetch_and_store_current_weather
 from services.prediction_service import update_all_predictions
 
-from api.latest import latest_bp
-from api.history import history_bp
+from api.latest import latest_bp, get_latest_temperature
+from api.history import history_bp, get_temperature_history
 from api.weekly_stats import weekly_stats_bp
 from api.predictions import predictions_bp
 from api.humidity import humidity_bp
 from api.humidity_stats import humidity_stats_bp
+from api.assistant import assistant_bp
 
-load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
@@ -28,6 +30,7 @@ app.register_blueprint(weekly_stats_bp, url_prefix='/api')
 app.register_blueprint(predictions_bp, url_prefix='/api')
 app.register_blueprint(humidity_bp, url_prefix='/api')
 app.register_blueprint(humidity_stats_bp, url_prefix='/api')
+app.register_blueprint(assistant_bp, url_prefix='/api')
 
 init_db()
 

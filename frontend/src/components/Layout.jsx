@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
+import ChatWidget from './ChatWidget';
 
 const Layout = () => {
   return (
@@ -9,6 +10,7 @@ const Layout = () => {
       <main className="p-4 md:p-8">
         <Outlet /> 
       </main>
+      <ChatWidget />
     </div>
   );
 };
