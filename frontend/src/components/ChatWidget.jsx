@@ -7,7 +7,7 @@ const ChatWidget = () => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: "Bonjour ! Je suis votre assistant météo. Posez-moi une question sur la température, l'humidité ou les prévisions.",
+      text: "Hello! I am your weather assistant. Ask me a question about temperature, humidity, or forecasts."
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -27,11 +27,11 @@ const ChatWidget = () => {
 
     try {
       const response = await queryAssistant(question);
-      const assistantResponse = response.answer || response.error || 'Je n’ai pas pu répondre à cette question pour le moment.';
+      const assistantResponse = response.answer || response.error || 'I couldn’t answer that question at the moment.';
       setMessages((prev) => [...prev, { role: 'assistant', text: assistantResponse }]);
     } catch (error) {
       console.error(error);
-      setMessages((prev) => [...prev, { role: 'assistant', text: "Désolé, le service n'est pas disponible pour le moment." }]);
+      setMessages((prev) => [...prev, { role: 'assistant', text: "Sorry, the service is not available at the moment." }]);
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ const ChatWidget = () => {
           <div className="flex items-center justify-between rounded-t-3xl bg-[var(--accent)] px-4 py-3 text-white">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <FiMessageSquare size={20} />
-              Assistant météo
+              Weather assistant
             </div>
             <button type="button" onClick={toggleOpen} aria-label="Fermer" className="rounded-full p-2 hover:bg-[rgba(77,184,176,0.8)]">
               <FiX size={20} />
@@ -83,14 +83,14 @@ const ChatWidget = () => {
               className="w-full resize-none rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(77,184,176,0.15)] dark:bg-[var(--bg-primary)] dark:text-[var(--text-primary)] dark:focus:border-[var(--accent)] dark:focus:ring-[rgba(77,184,176,0.25)]"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
-              <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">Appuie sur Entrée pour envoyer.</span>
+              <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">Press Enter to send.</span>
               <button
                 type="button"
                 onClick={sendMessage}
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(77,184,176,0.9)] disabled:cursor-not-allowed disabled:bg-[var(--border)]"
               >
-                {loading ? 'Envoi...' : 'Envoyer'}
+                {loading ? 'Sending...' : 'Send'}
                 <FiSend size={16} />
               </button>
             </div>

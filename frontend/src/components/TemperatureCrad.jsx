@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUp, Thermometer } from 'lucide-react';
 import Card from './Card';
 
-const TemperatureCrad = ({ time, temperature, trend }) => {
+const TemperatureCard = ({ time, temperature, trend }) => {
   const isValidTemperature = temperature !== null && temperature !== undefined && !Number.isNaN(Number(temperature));
   const formattedTemperature = isValidTemperature ? parseFloat(temperature).toFixed(1) : 'N/A';
 
   const parsedTime = time ? new Date(time) : null;
-  const lastUpdated = parsedTime && !Number.isNaN(parsedTime.getTime()) ? parsedTime.toLocaleTimeString() : '...';
+  const lastUpdated = parsedTime && !Number.isNaN(parsedTime.getTime())
+    ? parsedTime.toLocaleTimeString()
+    : '...';
 
   return (
     <Card>
@@ -33,17 +35,17 @@ const TemperatureCrad = ({ time, temperature, trend }) => {
       )}
 
       <div className="mt-8 flex items-center justify-between text-sm text-[var(--text-secondary)]">
-        <span>Last updated</span>
+        <span>Last updated: <span className="font-medium text-[var(--text-primary)]">{lastUpdated}</span></span>
         <Link to="/temperature" className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent)]">Voir plus &rarr;</Link>
       </div>
     </Card>
   );
 };
 
-TemperatureCrad.propTypes = {
+TemperatureCard.propTypes = {
   time: PropTypes.string,
   temperature: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   trend: PropTypes.oneOf(['up', 'down', 'stable']),
 };
 
-export default TemperatureCrad;
+export default TemperatureCard;
