@@ -19,6 +19,7 @@ def get_humidity_history():
     cursor = conn.cursor()
     
     try:
+        current_time = datetime.now().isoformat()
         # This SQL query groups all readings by the minute they occurred,
         # calculates the average humidity for that minute, and returns
         # the last 20 minutes of data.
@@ -30,12 +31,13 @@ def get_humidity_history():
                 humidity_data
             WHERE
                 latitude = ? AND longitude = ?
+                AND timestamp <= ?
             GROUP BY
                 minute_timestamp
             ORDER BY
                 minute_timestamp DESC
             LIMIT 20
-        ''', (latitude, longitude))
+        ''', (latitude, longitude, current_time))
         
         readings = cursor.fetchall()
         
@@ -71,12 +73,14 @@ def get_latest_humidity():
     cursor = conn.cursor()
     
     try:
+        current_time = datetime.now().isoformat()
         cursor.execute('''
         SELECT timestamp, humidity FROM humidity_data
         WHERE latitude = ? AND longitude = ?
+          AND timestamp <= ?
         ORDER BY timestamp DESC
         LIMIT 1
-        ''', (latitude, longitude))
+        ''', (latitude, longitude, current_time))
         latest = cursor.fetchone()
         
         if not latest:

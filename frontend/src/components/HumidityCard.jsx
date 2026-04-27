@@ -1,29 +1,29 @@
 import React from 'react';
-import { WiHumidity } from 'react-icons/wi';
 import { Link } from 'react-router-dom';
+import { Droplet } from 'lucide-react';
+import Card from './Card';
 
 const HumidityCard = ({ time, humidity }) => {
   const formattedHumidity = humidity && !isNaN(humidity) ? parseFloat(humidity).toFixed(1) : 'N/A';
   const lastUpdated = time ? new Date(time).toLocaleTimeString() : '...';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
-      <div>
-        <div className="flex justify-between items-start">
-          <h2 className="font-semibold text-lg text-gray-600 dark:text-gray-300">Current Humidity</h2>
-          <WiHumidity className="text-blue-500" size={32} />
+    <Card>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">Current humidity</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">{formattedHumidity}%</h2>
         </div>
-        <p className="text-5xl font-bold text-gray-800 dark:text-white my-4">
-          {formattedHumidity}<span className="text-2xl">%</span>
-        </p>
+        <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[var(--accent)]/15 text-[var(--accent)]">
+          <Droplet className="h-7 w-7" />
+        </div>
       </div>
-      <div className="flex justify-between items-end text-sm text-gray-500 dark:text-gray-400">
+
+      <div className="mt-8 flex items-center justify-between text-sm text-[var(--text-secondary)]">
         <span>Last updated: {lastUpdated}</span>
-        <Link to="/humidity" className="font-semibold text-green-600 hover:underline">
-          View More &rarr;
-        </Link>
+        <Link to="/humidity" className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent)]">{'View more ->'}</Link>
       </div>
-    </div>
+    </Card>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,6 +29,20 @@ const TemperaturePrediction = () => {
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState("");
   const [predictionDay, setPredictionDay] = useState(1);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const fetchPredictions = async () => {
     try {
@@ -106,10 +120,10 @@ const TemperaturePrediction = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
+      <div className="bg-[var(--card-bg)] rounded-2xl shadow-sm border border-[var(--border)] p-6 hover:shadow-md transition-shadow duration-200 h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Loading predictions...</p>
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[var(--text-secondary)]">Loading predictions...</p>
         </div>
       </div>
     );
@@ -150,6 +164,7 @@ const TemperaturePrediction = () => {
         labels: {
           usePointStyle: true,
           padding: 20,
+          color: isDark ? '#f3f4f6' : '#1f2937',
           font: {
             size: 12,
             weight: '500'
@@ -157,10 +172,10 @@ const TemperaturePrediction = () => {
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#1f2937',
-        bodyColor: '#1f2937',
-        borderColor: '#e5e7eb',
+        backgroundColor: isDark ? '#1f2937' : 'rgba(255, 255, 255, 0.9)',
+        titleColor: isDark ? '#f3f4f6' : '#1f2937',
+        bodyColor: isDark ? '#f3f4f6' : '#1f2937',
+        borderColor: isDark ? '#374151' : '#e5e7eb',
         borderWidth: 1,
         padding: 12,
         displayColors: true,
@@ -182,7 +197,7 @@ const TemperaturePrediction = () => {
           display: false
         },
         ticks: {
-          color: '#6b7280',
+          color: isDark ? '#9ca3af' : '#6b7280',
           font: {
             size: 11
           }
@@ -190,10 +205,10 @@ const TemperaturePrediction = () => {
       },
       y: {
         grid: {
-          color: '#e5e7eb'
+          color: isDark ? '#374151' : '#e5e7eb'
         },
         ticks: {
-          color: '#6b7280',
+          color: isDark ? '#9ca3af' : '#6b7280',
           font: {
             size: 11
           },
@@ -204,7 +219,7 @@ const TemperaturePrediction = () => {
         title: {
           display: true,
           text: 'Temperature (°C)',
-          color: '#6b7280',
+          color: isDark ? '#9ca3af' : '#6b7280',
           font: {
             size: 12,
             weight: '500'
@@ -215,20 +230,20 @@ const TemperaturePrediction = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200 h-full">
+    <div className="bg-[var(--card-bg)] rounded-2xl shadow-sm border border-[var(--border)] p-6 hover:shadow-md transition-shadow duration-200 h-full">
       <div className="mb-4 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Temperature Prediction</h2>
-          <p className="text-sm font-medium text-gray-500">5-Day Hourly Temperature Forecast</p>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Temperature Prediction</h2>
+          <p className="text-sm font-medium text-[var(--text-secondary)]">5-Day Hourly Temperature Forecast</p>
         </div>
         
         <div className="flex items-center gap-2">
           <label htmlFor="daySelect" className="text-sm font-medium text-gray-600">Day to predict:</label>
           <select 
-            id="daySelect"
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
-            value={predictionDay}
-            onChange={(e) => setPredictionDay(parseInt(e.target.value))}
+             id="daySelect"
+             className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm bg-[var(--card-bg)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all duration-200"
+             value={predictionDay}
+             onChange={(e) => setPredictionDay(parseInt(e.target.value))}
           >
             <option value="1">Tomorrow</option>
             <option value="2">Day after tomorrow</option>
@@ -240,24 +255,24 @@ const TemperaturePrediction = () => {
       </div>
       
       {error || !predictionData ? (
-        <div className="flex flex-col items-center justify-center h-[300px]">
-          <div className="text-red-500 mb-2 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {error || "No prediction data available"}
-          </div>
-          <details className="text-xs text-gray-500 mt-2 p-2 border rounded bg-gray-50">
-            <summary className="cursor-pointer hover:text-gray-700">Debug Information</summary>
-            <pre className="whitespace-pre-wrap mt-2">{debugInfo}</pre>
-          </details>
-          <button 
-            className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors duration-200 shadow-sm"
-            onClick={fetchPredictions}
-          >
-            Retry
-          </button>
+      <div className="flex flex-col items-center justify-center h-[300px]">
+        <div className="text-red-500 mb-2 flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error || "No prediction data available"}
         </div>
+        <details className="text-xs text-[var(--text-secondary)] mt-2 p-2 border border-[var(--border)] rounded bg-[var(--bg-secondary)]">
+          <summary className="cursor-pointer hover:text-[var(--text-primary)]">Debug Information</summary>
+          <pre className="whitespace-pre-wrap mt-2">{debugInfo}</pre>
+        </details>
+        <button 
+          className="mt-4 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[rgba(77,184,176,0.9)] transition-colors duration-200 shadow-sm"
+          onClick={fetchPredictions}
+        >
+          Retry
+        </button>
+      </div>
       ) : (
         <div className="h-[300px]">
           <Line options={options} data={chartData} />
@@ -268,3 +283,4 @@ const TemperaturePrediction = () => {
 };
 
 export default TemperaturePrediction; 
+

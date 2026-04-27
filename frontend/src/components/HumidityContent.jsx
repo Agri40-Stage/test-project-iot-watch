@@ -40,8 +40,8 @@ const HumidityContent = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="w-full flex flex-col gap-2 text-left">
-        <h1 className="font-bold text-3xl dark:text-white">Humidity Dashboard</h1>
-        <p className="text-sm font-light text-gray-400">Monitor real-time humidity data and historical trends</p>
+        <h1 className="font-bold text-3xl text-[var(--text-primary)]">Humidity Dashboard</h1>
+        <p className="text-sm font-light text-[var(--text-secondary)]">Monitor real-time humidity data and historical trends</p>
       </div>
       <div className="grid gap-4 grid-cols-1 xl:grid-cols-[384px_1fr]">
         <HumidityCard
@@ -49,7 +49,7 @@ const HumidityContent = () => {
           humidity={latestHumidityData.humidity}
         />
         {historyChartData ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 h-[400px]">
+          <div className="bg-[var(--card-bg)] rounded-2xl shadow-sm p-6 min-h-[400px] flex flex-col">
             <HumidityChart data={historyChartData} />
           </div>
         ) : (
