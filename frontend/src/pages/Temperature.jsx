@@ -1,6 +1,5 @@
 import React from 'react';
 import Content from '../components/Content';
-import TemperaturePrediction from '../components/TemperaturePrediction';
 import WeeklyStats from '../components/WeeklyStats';
 
 function Temperature() {

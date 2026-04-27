@@ -101,8 +101,8 @@ const HumidityChart = () => {
 
     return ( 
         <div className="flex justify-center items-center h-96 w-full max-w-4xl">
-            <div className="w-full h-full">
-                {humidityData ? <Line options={options} data={humidityData} /> : <p>Loading Humidity Chart...</p>}
+            <div className="w-full h-full rounded-3xl border border-[var(--border)] bg-[var(--card-bg)] p-4 shadow-sm dark:bg-[var(--bg-primary)]">
+                {humidityData ? <Line options={options} data={humidityData} /> : <p className="text-[var(--text-secondary)]">Loading Humidity Chart...</p>}
             </div>
         </div>
     );

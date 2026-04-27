@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import TemperatureCrad from "./TemperatureCrad";
 import TemperatureChart from "./TemperatureChart";
 import fetchLatestTemperature from "../api/latest";
@@ -42,8 +42,8 @@ const Content = () => {
   return (
     <div className="flex flex-col gap-8 py-12 px-6">
       <div className="w-full flex flex-col gap-2 text-left">
-        <h1 className="font-bold text-3xl">Temperature Dashboard</h1>
-        <p className="text-sm font-light text-gray-400">Monitor real-time temperature data and historical trends</p>
+        <h1 className="font-bold text-3xl text-[var(--text-primary)]">Temperature Dashboard</h1>
+        <p className="text-sm font-light text-[var(--text-secondary)]">Monitor real-time temperature data and historical trends</p>
       </div>
       <div className="grid gap-4 grid-cols-1 xl:grid-cols-[384px_1fr]">
         <TemperatureCrad
@@ -54,7 +54,7 @@ const Content = () => {
         {historyChartData ? (
           <TemperatureChart chartData={historyChartData} />
         ) : (
-          <div>Loading Chart...</div>
+          <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-6 text-[var(--text-secondary)]">Loading Chart...</div>
         )}
       </div>
     </div>
@@ -62,3 +62,4 @@ const Content = () => {
 };
 
 export default Content;
+

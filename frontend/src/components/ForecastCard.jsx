@@ -1,26 +1,27 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiTrendingUp } from 'react-icons/fi';
+import { CloudRain } from 'lucide-react';
+import Card from './Card';
 
 const ForecastCard = () => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
-      <div>
-        <div className="flex justify-between items-start">
-          <h2 className="font-semibold text-lg text-gray-600 dark:text-gray-300">Weather Forecast</h2>
-          <FiTrendingUp className="text-purple-500" size={32} />
+    <Card>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">Forecast</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Next 5 days</h2>
         </div>
-        <p className="text-gray-500 dark:text-gray-400 my-4">
-          View detailed hourly temperature predictions for the next 5 days.
-        </p>
+        <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[var(--accent)]/15 text-[var(--accent)]">
+          <CloudRain className="h-7 w-7" />
+        </div>
       </div>
-      <Link 
-        to="/forecast" 
-        className="font-semibold text-green-600 hover:underline text-right mt-4"
-      >
-        View Forecast &rarr;
-      </Link>
-    </div>
+      <p className="mt-6 text-sm leading-6 text-[var(--text-secondary)]">
+        Check detailed hourly temperature predictions for the next 5 days.
+      </p>
+      <div className="mt-8 text-right">
+        <Link to="/forecast" className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent)]">{'View forecast ->'}</Link>
+      </div>
+    </Card>
   );
 };
 

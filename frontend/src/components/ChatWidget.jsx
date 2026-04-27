@@ -53,42 +53,42 @@ const ChatWidget = () => {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {open && (
-        <div className="mb-3 w-[360px] max-w-[calc(100vw-2rem)] rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex items-center justify-between rounded-t-3xl bg-green-600 px-4 py-3 text-white">
+        <div className="mb-3 w-[360px] max-w-[calc(100vw-2rem)] rounded-3xl border border-[var(--border)] bg-[var(--card-bg)] shadow-2xl dark:bg-[var(--bg-primary)]">
+          <div className="flex items-center justify-between rounded-t-3xl bg-[var(--accent)] px-4 py-3 text-white">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <FiMessageSquare size={20} />
               Assistant météo
             </div>
-            <button type="button" onClick={toggleOpen} aria-label="Fermer" className="rounded-full p-2 hover:bg-green-500/80">
+            <button type="button" onClick={toggleOpen} aria-label="Fermer" className="rounded-full p-2 hover:bg-[rgba(77,184,176,0.8)]">
               <FiX size={20} />
             </button>
           </div>
-          <div className="max-h-[420px] overflow-y-auto px-4 py-4 text-sm text-gray-800 dark:text-gray-100">
+          <div className="max-h-[420px] overflow-y-auto px-4 py-4 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {messages.map((message, index) => (
               <div key={index} className={`mb-3 flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
-                <div className={`rounded-3xl px-4 py-3 ${message.role === 'assistant' ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100' : 'bg-green-600 text-white'}`}>
+                <div className={`rounded-3xl px-4 py-3 ${message.role === 'assistant' ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)] dark:bg-[var(--card-bg)] dark:text-[var(--text-primary)]' : 'bg-[var(--accent)] text-white'}`}>
                   {message.text}
                 </div>
               </div>
             ))}
             <div ref={messageEndRef} />
           </div>
-          <div className="border-t border-gray-200 p-3 dark:border-gray-700">
+          <div className="border-t border-[var(--border)] p-3 dark:border-[var(--border)]">
             <textarea
               rows={2}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Pose une question..."
-              className="w-full resize-none rounded-3xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:focus:border-green-400 dark:focus:ring-green-900"
+              className="w-full resize-none rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(77,184,176,0.15)] dark:bg-[var(--bg-primary)] dark:text-[var(--text-primary)] dark:focus:border-[var(--accent)] dark:focus:ring-[rgba(77,184,176,0.25)]"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Appuie sur Entrée pour envoyer.</span>
+              <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">Appuie sur Entrée pour envoyer.</span>
               <button
                 type="button"
                 onClick={sendMessage}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(77,184,176,0.9)] disabled:cursor-not-allowed disabled:bg-[var(--border)]"
               >
                 {loading ? 'Envoi...' : 'Envoyer'}
                 <FiSend size={16} />
@@ -97,11 +97,11 @@ const ChatWidget = () => {
           </div>
         </div>
       )}
-      <button
-        type="button"
-        onClick={toggleOpen}
-        className="flex items-center gap-2 rounded-full bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-green-700"
-      >
+        <button
+          type="button"
+          onClick={toggleOpen}
+          className="flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-[rgba(77,184,176,0.9)]"
+        >
         <FiMessageSquare size={20} />
         <span>Assistant</span>
       </button>
