@@ -27,7 +27,7 @@ function Header() {
                 {/* Logo */}
                 <div className="flex-1 flex items-center">
                     <Link to="/">
-                    <img className="h-14 md:h-20" src="https://th.bing.com/th/id/OIP.2PDIejApjWb5yA0ZqaFiJgHaHa?rs=1&pid=ImgDetMain" alt="logo" />
+                        <img className="h-14 md:h-20" src="https://th.bing.com/th/id/OIP.2PDIejApjWb5yA0ZqaFiJgHaHa?rs=1&pid=ImgDetMain" alt="logo" />
                     </Link>
                 </div>
                 {/* Hamburger */}
