@@ -32,9 +32,41 @@ def predict_temperature():
             predictions = cursor.fetchall()
 
         conn.close()
-        
+
         if not predictions:
-             return jsonify({"error": f"Still no prediction data available for day {day} after refresh."}), 404
+            if day == 5:
+                # Fallback: compute average temperature from days 1-4
+                conn_fb = get_db_connection()
+                cursor_fb = conn_fb.cursor()
+                prev_start = tomorrow
+                prev_end = tomorrow + timedelta(days=4)
+                cursor_fb.execute('SELECT AVG(temperature) as avg_temp FROM temperature_predictions WHERE target_date >= ? AND target_date < ?', (prev_start.isoformat(), prev_end.isoformat()))
+                result = cursor_fb.fetchone()
+                avg_temp = result['avg_temp'] if result and result['avg_temp'] is not None else 20.0
+                conn_fb.close()
+                # Generate 24 hourly predictions for day 5
+                fallback_timestamps = []
+                fallback_temps = []
+                fallback_hourly = []
+                for h in range(24):
+                    dt = start_time + timedelta(hours=h)
+                    fallback_timestamps.append(dt.isoformat())
+                    fallback_temps.append(avg_temp)
+                    fallback_hourly.append({"hour": h, "time": dt.strftime("%H:00"), "temperature": avg_temp})
+                return jsonify({
+                    "day": day,
+                    "date": start_time.strftime("%Y-%m-%d"),
+                    "day_of_week": start_time.strftime("%A"),
+                    "timestamps": fallback_timestamps,
+                    "predictions": fallback_temps,
+                    "hourly": fallback_hourly,
+                    "min_temp": avg_temp,
+                    "max_temp": avg_temp,
+                    "avg_temp": avg_temp,
+                    "fallback": True
+                })
+            else:
+                return jsonify({"error": f"Still no prediction data available for day {day} after refresh."}), 404
 
         hourly_predictions = []
         timestamps = [p['target_date'] for p in predictions]

@@ -7,8 +7,8 @@ from db.maintenance import DEFAULT_LATITUDE, DEFAULT_LONGITUDE
 
 def update_all_predictions():
     """
-    Update all predictions for the next 5 days by fetching a real forecast from Open-Meteo.
-    This is the single source of truth for all prediction data.
+    Update all predictions for the next 6 days by fetching a real forecast from Open-Meteo.
+    This ensures we have enough data for 5-day predictions.
     """
     try:
         print(f"[{datetime.now().isoformat()}] Starting daily prediction update from forecast API...")
@@ -18,7 +18,8 @@ def update_all_predictions():
             "latitude": DEFAULT_LATITUDE,
             "longitude": DEFAULT_LONGITUDE,
             "hourly": "temperature_2m",
-            "forecast_days": 5 
+            "forecast_days": 6,
+            "timezone": "auto"
         }
         response = requests.get(url, params=params)
         response.raise_for_status()

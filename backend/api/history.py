@@ -17,13 +17,15 @@ def get_temperature_history():
     cursor = conn.cursor()
     
     try:
+        current_time = datetime.now().isoformat()
         cursor.execute('''
         SELECT timestamp, temperature
         FROM temperature_data
         WHERE latitude = ? AND longitude = ?
+          AND timestamp <= ?
         ORDER BY timestamp DESC
         LIMIT 10
-        ''', (latitude, longitude))
+        ''', (latitude, longitude, current_time))
         readings = cursor.fetchall()
         
         # This block is a fallback for when the app starts with an empty database

@@ -17,19 +17,21 @@ def get_latest_temperature():
     cursor = conn.cursor()
     
     try:
+        current_time = datetime.now().isoformat()
         cursor.execute('''
         SELECT * FROM temperature_data
         WHERE latitude = ? AND longitude = ?
+          AND timestamp <= ?
         ORDER BY timestamp DESC
         LIMIT 1
-        ''', (latitude, longitude))
+        ''', (latitude, longitude, current_time))
         latest = cursor.fetchone()
         
         if not latest:
             weather_data = fetch_and_store_current_weather()
             return jsonify({
                 "time": datetime.now().isoformat(),
-                "temperature": weather_data.get("temperature") if weather_data else "N/A",
+                "temperature": weather_data.get("temperature") if weather_data else None,
                 "trend": "stable",
                 "is_live": True
             })

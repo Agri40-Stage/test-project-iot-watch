@@ -1,60 +1,51 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { ArrowDown, ArrowUp, Thermometer } from 'lucide-react';
+import Card from './Card';
 
-import { ArrowDown, ArrowUp, Thermometer } from "lucide-react";
+const TemperatureCard = ({ time, temperature, trend }) => {
+  const isValidTemperature = temperature !== null && temperature !== undefined && !Number.isNaN(Number(temperature));
+  const formattedTemperature = isValidTemperature ? parseFloat(temperature).toFixed(1) : 'N/A';
 
-const TemperatureCrad = ({ time, temperature, trend }) => {
-  
-  const formattedTemperature = temperature && !isNaN(temperature) ? parseFloat(temperature).toFixed(1) : "N/A";
-  const lastUpdated = time ? new Date(time).toLocaleTimeString() : "...";
+  const parsedTime = time ? new Date(time) : null;
+  const lastUpdated = parsedTime && !Number.isNaN(parsedTime.getTime())
+    ? parsedTime.toLocaleTimeString()
+    : '...';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
-      <div>
-        <div className="flex justify-between items-start">
-          <h2 className="font-semibold text-lg text-gray-600 dark:text-gray-300">Current Temperature</h2>
-          <Thermometer className="text-red-500" size={32} />
+    <Card>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">Current temperature</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+            {isValidTemperature ? `${formattedTemperature}\u00B0C` : formattedTemperature}
+          </h2>
         </div>
-        
-        <div className="flex items-baseline gap-2 my-4">
-            <p className="text-5xl font-bold text-gray-800 dark:text-white">
-                {formattedTemperature}
-            </p>
-            <span className="text-2xl font-semibold text-gray-700 dark:text-gray-300">°C</span>
+        <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[var(--accent)]/15 text-[var(--accent)]">
+          <Thermometer className="h-7 w-7" />
         </div>
-
-        {trend && trend !== "stable" && (
-          <div className="flex items-center text-sm font-medium">
-            {trend === "up" ? (
-              <>
-                <ArrowUp className="h-4 w-4 mr-1 text-red-500" />
-                <span className="text-red-500">Rising</span>
-              </>
-            ) : (
-              <>
-                <ArrowDown className="h-4 w-4 mr-1 text-blue-500" />
-                <span className="text-blue-500">Falling</span>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
-      <div className="flex justify-between items-end text-sm text-gray-500 dark:text-gray-400 mt-4">
-        <span>Last updated: {lastUpdated}</span>
-        <Link to="/temperature" className="font-semibold text-green-600 hover:underline">
-          View More &rarr;
-        </Link>
+      {trend && trend !== 'stable' && (
+        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--bg-secondary)] px-4 py-2 text-sm text-[var(--text-secondary)] dark:bg-[var(--bg-primary)]">
+          {trend === 'up' ? <ArrowUp className="h-4 w-4 text-[var(--accent)]" /> : <ArrowDown className="h-4 w-4 text-[var(--accent)]" />}
+          <span>{trend === 'up' ? 'Rising trend' : 'Falling trend'}</span>
+        </div>
+      )}
+
+      <div className="mt-8 flex items-center justify-between text-sm text-[var(--text-secondary)]">
+        <span>Last updated: <span className="font-medium text-[var(--text-primary)]">{lastUpdated}</span></span>
+        <Link to="/temperature" className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent)]">Voir plus &rarr;</Link>
       </div>
-    </div>
+    </Card>
   );
 };
 
-TemperatureCrad.propTypes = {
+TemperatureCard.propTypes = {
   time: PropTypes.string,
-  temperature: PropTypes.number,
-  trend: PropTypes.oneOf(["up", "down", "stable"]),
+  temperature: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  trend: PropTypes.oneOf(['up', 'down', 'stable']),
 };
 
-export default TemperatureCrad;
+export default TemperatureCard;
