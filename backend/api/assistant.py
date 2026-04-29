@@ -15,7 +15,7 @@ Règles :
 - Donne uniquement la réponse demandée
 - Si on demande la température, donne juste la valeur
 - Ne répète pas les prévisions sauf si demandé
-- Réponds en français
+- Réponds en anglais
 """
 
 # -----------------------------
