@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory
+from services.anomaly_detector import AnomalyDetector
 from services.weather_fetcher import *
 from models import *
 
@@ -26,7 +27,7 @@ last_prediction_time = None
 
 # Initialize database
 init_db()
-
+anomaly_detector = AnomalyDetector()
 def run_background_services():
     def temperature_updater():
         """Update temperature data continuously"""
@@ -136,6 +137,48 @@ def get_latest_temperature():
         return jsonify({"error": str(e)})
     finally:
         conn.close()
+@app.route('/api/anomalies', methods=['GET'])
+def get_anomalies():
+    try:
+        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
+        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # get last data (no change in your logic)
+        cursor.execute('''
+        SELECT timestamp, temperature
+        FROM temperature_data
+        WHERE latitude = ? AND longitude = ?
+        ORDER BY timestamp DESC
+        LIMIT 200
+        ''', (latitude, longitude))
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        data = [
+            {
+                "timestamp": r["timestamp"],
+                "temperature": float(r["temperature"])
+            }
+            for r in rows
+        ]
+
+        # run anomaly detection
+        anomalies = anomaly_detector.detect_all(data)
+
+        return jsonify({
+            "count": len(anomalies),
+            "anomalies": anomalies
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "anomalies": []
+        })
 
 @app.route('/api/history', methods=['GET'])
 def get_temperature_history():
