@@ -26,6 +26,19 @@ ChartJS.register(
 );
 
 const WeeklyStats = () => {
+  const calculateMedian = (arr) => {
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+const calculateStdDev = (arr) => {
+  const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+  const squaredDiffs = arr.map(val => Math.pow(val - mean, 2));
+  const avgSquaredDiff = squaredDiffs.reduce((a, b) => a + b, 0) / arr.length;
+  return Math.sqrt(avgSquaredDiff);
+};
   const [weeklyData, setWeeklyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -237,6 +250,22 @@ const WeeklyStats = () => {
       <div className="mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Weekly Temperature Stats</h2>
         <p className="text-sm font-medium text-gray-500">Last 7 days of temperature data</p>
+        {weeklyData && (
+  <div className="grid grid-cols-2 gap-3 mb-4">
+    <div className="bg-orange-50 rounded-xl p-3 text-center">
+      <p className="text-xs text-orange-600 font-medium">Médiane</p>
+      <p className="text-xl font-semibold text-orange-700">
+        {calculateMedian(weeklyData.avgTemps).toFixed(1)}°C
+      </p>
+    </div>
+    <div className="bg-blue-50 rounded-xl p-3 text-center">
+      <p className="text-xs text-blue-600 font-medium">Écart-type</p>
+      <p className="text-xl font-semibold text-blue-700">
+        {calculateStdDev(weeklyData.avgTemps).toFixed(2)}°C
+      </p>
+    </div>
+  </div>
+)}
       </div>
       <div className="h-[300px]">
         <Bar options={options} data={chartData} />
