@@ -9,13 +9,17 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, g
 from services.weather_fetcher import *
 from models import *
+from logging_config import configure_logging, get_logger
 
 load_dotenv()
+configure_logging()
+
 app = Flask(__name__)
 CORS(app)
+logger = get_logger(__name__)
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -35,36 +39,58 @@ def run_background_services():
                 get_current_temperature()
                 time.sleep(1)
             except Exception as e:
-                print(f"Error in temperature updater: {str(e)}")
+                logger.exception("Error in temperature updater", extra={"error": str(e)})
                 time.sleep(1)
     
     def scheduler():
         schedule.every().day.at("00:00").do(update_all_predictions)
         schedule.every().day.at("00:00").do(purge_old_data)
         
-        print("Performing initial prediction for all 5 days...")
+        logger.info("Performing initial prediction for all 5 days")
         update_all_predictions()        
         while True:
             try:
                 schedule.run_pending()
                 time.sleep(1)
             except Exception as e:
-                print(f"Error in scheduler: {str(e)}")
+                logger.exception("Error in scheduler", extra={"error": str(e)})
                 time.sleep(1)
     
     # Start temperature updater in a background thread
     temp_thread = threading.Thread(target=temperature_updater)
     temp_thread.daemon = True
     temp_thread.start()
-    print("Background temperature updates started (every second)")
+    logger.info("Background temperature updates started", extra={"interval_seconds": 1})
   
     # Start scheduler in a background thread
     scheduler_thread = threading.Thread(target=scheduler)
     scheduler_thread.daemon = True
     scheduler_thread.start()
-    print(f"Prediction updates scheduled (daily at midnight)")
+    logger.info("Prediction updates scheduled", extra={"schedule": "daily at midnight"})
     
-    print("All background services started successfully")
+    logger.info("All background services started successfully")
+
+
+@app.before_request
+def log_request_start():
+    g.request_start_time = time.perf_counter()
+
+
+@app.after_request
+def log_request_end(response):
+    if request.path.startswith('/api/'):
+        duration_ms = (time.perf_counter() - getattr(g, "request_start_time", time.perf_counter())) * 1000
+        logger.info(
+            "API request processed",
+            extra={
+                "path": request.path,
+                "method": request.method,
+                "status": response.status_code,
+                "duration_ms": round(duration_ms, 2),
+                "remote_addr": request.remote_addr,
+            },
+        )
+    return response
 
 @app.route('/api/latest', methods=['GET'])
 def get_latest_temperature():
@@ -132,7 +158,7 @@ def get_latest_temperature():
         })
         
     except Exception as e:
-        print(f"Error getting latest temperature: {str(e)}")
+        logger.exception("Error getting latest temperature", extra={"error": str(e)})
         return jsonify({"error": str(e)})
     finally:
         conn.close()
@@ -176,7 +202,7 @@ def get_temperature_history():
         timestamps = [record['timestamp'] for record in readings]
         temperatures = [float(record['temperature']) for record in readings]
         
-        print(f"[{datetime.now().isoformat()}] Returning {len(readings)} temperature readings")
+        logger.info("Returning temperature history", extra={"count": len(readings)})
         
         return jsonify({
             "lastTimestamps": timestamps,
@@ -187,7 +213,7 @@ def get_temperature_history():
         })
         
     except Exception as e:
-        print(f"Error getting temperature history: {str(e)}")
+        logger.exception("Error getting temperature history", extra={"error": str(e)})
         return jsonify({"error": str(e)})
     finally:
         conn.close()
@@ -257,8 +283,7 @@ def get_weekly_stats():
         })
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Error getting weekly stats", extra={"error": str(e)})
         return jsonify({
             "success": False,
             "error": str(e),
@@ -296,7 +321,7 @@ def predict_temperature():
         conn.close()
         
         if not predictions:
-            print(f"No predictions found for day {day}, generating new predictions...")
+            logger.info("No predictions found, generating new predictions", extra={"day": day})
             result = predict_for_day(day)
             return jsonify(result)
         
@@ -328,8 +353,7 @@ def predict_temperature():
         })
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Error in predict_temperature endpoint", extra={"error": str(e)})
         return jsonify({"error": str(e)})
 
 def predict_for_day(day):
@@ -398,14 +422,17 @@ def predict_for_day(day):
                     
                 except sqlite3.OperationalError as e:
                     if "database is locked" in str(e):
-                        print(f"Database locked, retrying hour {hour}")
+                        logger.warning("Database locked during prediction insert", extra={"hour": hour})
                         time.sleep(0.1)
                         continue
                     raise
             
             # Commit all predictions
             conn.commit()
-            print(f"Successfully stored {len(hourly_predictions)} hourly predictions for day {day}")
+            logger.info(
+                "Stored hourly predictions",
+                extra={"day": day, "count": len(hourly_predictions)},
+            )
             
             return {
                 "day": day,
@@ -419,11 +446,11 @@ def predict_for_day(day):
             }
             
         except Exception as e:
-            print(f"Error making predictions for day {day}: {str(e)}")
+            logger.exception("Error making predictions for day", extra={"day": day, "error": str(e)})
             raise
             
     except Exception as e:
-        print(f"Error in predict_for_day: {str(e)}")
+        logger.exception("Error in predict_for_day", extra={"day": day, "error": str(e)})
         raise
     finally:
         try:
@@ -454,7 +481,7 @@ def get_forecast():
         
         if not all_predictions:
             # If no predictions available, try to generate them
-            print("No predictions found. Generating new predictions.")
+            logger.info("No forecast predictions found, generating new predictions")
             update_all_predictions()
             
             # Then try fetching again
@@ -532,8 +559,7 @@ def get_forecast():
         })
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Error in get_forecast endpoint", extra={"error": str(e)})
         return jsonify({
             "success": False,
             "error": str(e)
@@ -561,4 +587,5 @@ def serve(path):
 
 if __name__ == "__main__":
     run_background_services()
+    logger.info("Starting Flask application", extra={"host": "0.0.0.0", "port": 5000})
     app.run(host="0.0.0.0", port=5000)
