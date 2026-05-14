@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory, g
 from services.weather_fetcher import *
 from models import *
+from validators import validate_latitude, validate_longitude, validate_day
 from logging_config import configure_logging, get_logger
 
 load_dotenv()
@@ -95,8 +96,18 @@ def log_request_end(response):
 @app.route('/api/latest', methods=['GET'])
 def get_latest_temperature():
     """Get the latest temperature reading and current hour's average"""
-    latitude = request.args.get('latitude', DEFAULT_LATITUDE)
-    longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+    lat_raw = request.args.get('latitude')
+    lon_raw = request.args.get('longitude')
+
+    latitude, err = validate_latitude(lat_raw)
+    if err:
+        logger.warning("Invalid latitude provided", extra={"raw": lat_raw, "error": err})
+        return jsonify({"error": err}), 400
+
+    longitude, err = validate_longitude(lon_raw)
+    if err:
+        logger.warning("Invalid longitude provided", extra={"raw": lon_raw, "error": err})
+        return jsonify({"error": err}), 400
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -166,8 +177,18 @@ def get_latest_temperature():
 @app.route('/api/history', methods=['GET'])
 def get_temperature_history():
     """Get the last 10 individual temperature readings"""
-    latitude = request.args.get('latitude', DEFAULT_LATITUDE)
-    longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+    lat_raw = request.args.get('latitude')
+    lon_raw = request.args.get('longitude')
+
+    latitude, err = validate_latitude(lat_raw)
+    if err:
+        logger.warning("Invalid latitude provided", extra={"raw": lat_raw, "error": err})
+        return jsonify({"error": err}), 400
+
+    longitude, err = validate_longitude(lon_raw)
+    if err:
+        logger.warning("Invalid longitude provided", extra={"raw": lon_raw, "error": err})
+        return jsonify({"error": err}), 400
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -221,8 +242,18 @@ def get_temperature_history():
 @app.route('/api/weekly-stats', methods=['GET'])
 def get_weekly_stats():
     try:
-        latitude = request.args.get('latitude', DEFAULT_LATITUDE)
-        longitude = request.args.get('longitude', DEFAULT_LONGITUDE)
+        lat_raw = request.args.get('latitude')
+        lon_raw = request.args.get('longitude')
+
+        latitude, err = validate_latitude(lat_raw)
+        if err:
+            logger.warning("Invalid latitude provided", extra={"raw": lat_raw, "error": err})
+            return jsonify({"error": err}), 400
+
+        longitude, err = validate_longitude(lon_raw)
+        if err:
+            logger.warning("Invalid longitude provided", extra={"raw": lon_raw, "error": err})
+            return jsonify({"error": err}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -297,9 +328,11 @@ def get_weekly_stats():
 def predict_temperature():
     """Get temperature predictions from database"""
     try:
-        day = int(request.args.get('day', '1'))
-        if day < 1 or day > 5:
-            return jsonify({"error": "Day parameter must be between 1 and 5"})
+        day_raw = request.args.get('day')
+        day, err = validate_day(day_raw, default=1, min_val=1, max_val=5)
+        if err:
+            logger.warning("Invalid day provided", extra={"raw": day_raw, "error": err})
+            return jsonify({"error": err}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
