@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iot-backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "5000:5000"
+    networks:
+      - iot-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://backend:5000
+    container_name: iot-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - iot-net
+
+networks:
+  iot-net:
+    driver: bridge

@@ -3,6 +3,9 @@ import os
 from datetime import datetime, timedelta
 import numpy as np
 from tensorflow.keras.models import load_model
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 BASE_TEMP = 25.0
 DEFAULT_LATITUDE = 30.4202
@@ -34,7 +37,7 @@ def generate_mock_data(clear_existing=True):
     
     conn.commit()
     conn.close()
-    print("Mock data generated successfully")
+    logger.info("Mock data generated successfully")
 
 def init_db():
     conn = get_db_connection()
@@ -73,7 +76,7 @@ def init_db():
     count = cursor.fetchone()[0]
     
     if count == 0:
-        print("Database is empty. Populating with mock data...")
+        logger.info("Database is empty, populating with mock data")
         conn.close()
         generate_mock_data()
     else:
@@ -101,7 +104,7 @@ def purge_old_data():
     
     conn.commit()
     conn.close()
-    print(f"Purged data older than {threshold_date}")
+    logger.info("Purged old data", extra={"threshold_date": threshold_date})
 
 def load_prediction_model():
     """Load the Keras prediction model (cached version)"""
@@ -113,27 +116,25 @@ def load_prediction_model():
         os.path.join(os.path.dirname(__file__), 'ml.keras')
     ]
     
-    print(f"Attempting to load model from possible paths:")
+    logger.info("Attempting to load model from possible paths")
     for path in possible_paths:
-        print(f"Checking path: {path}")
-        print(f"Path exists: {os.path.exists(path)}")
+        logger.info("Checking model path", extra={"path": path, "exists": os.path.exists(path)})
     
     # Try each possible path
     for model_path in possible_paths:
         try:
             if os.path.exists(model_path):
-                print(f"Loading model from: {model_path}")
+                logger.info("Loading model", extra={"path": model_path})
                 model = load_model(model_path, compile=False)
-                print(f"Successfully loaded Keras model from {model_path} (cached)")
+                logger.info("Successfully loaded Keras model", extra={"path": model_path})
                 return model
             else:
-                print(f"Model file not found at: {model_path}")
+                logger.warning("Model file not found", extra={"path": model_path})
         except Exception as e:
-            print(f"Error loading model from {model_path}:")
-            print(f"Error type: {type(e).__name__}")
-            print(f"Error message: {str(e)}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(
+                "Error loading model",
+                extra={"path": model_path, "error_type": type(e).__name__, "error": str(e)},
+            )
             continue
     
     raise ValueError("Could not load the prediction model from any of the specified paths")

@@ -146,3 +146,12 @@ Le backend fournit les points de terminaison suivants :
 
 - `/data/latest` – Obtenir la dernière température avec tendance
 - `/data/history` – Obtenir l'historique des températures des dernières heures
+
+## API Documentation
+
+The backend serves OpenAPI (Swagger) documentation when `backend/openapi.yml` is present.
+
+- UI: `http://localhost:5000/apidocs`
+- Raw spec: `http://localhost:5000/apispec.json`
+
+All API documentation should be maintained in `backend/openapi.yml` (OpenAPI 2.0 / Swagger).

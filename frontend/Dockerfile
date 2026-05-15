@@ -1,17 +1,24 @@
-# Use lightweight Node.js image
-FROM node:24-alpine3.20
+FROM node:24-alpine3.20 AS builder
 
-# Set working directory inside the container
 WORKDIR /app
 
-# Copy project files into the container
+ARG VITE_API_BASE_URL=http://localhost:5000
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+COPY package*.json ./
+
+RUN npm ci
+
 COPY . .
 
-# Install dependencies
-RUN npm install
+RUN npm run build
 
-# Expose Vite dev server port
-EXPOSE 5173
 
-# Start the dev server
-CMD ["npm", "run", "dev" , "--" , "--host"]
+FROM nginx:1.27-alpine AS runtime
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

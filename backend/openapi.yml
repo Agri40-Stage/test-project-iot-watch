@@ -1,0 +1,320 @@
+swagger: '2.0'
+info:
+  title: IoT Temp Watch API
+  version: '1.0.0'
+  description: OpenAPI documentation for the IoT Temp Watch backend.
+host: localhost:5000
+basePath: /
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /api/latest:
+    get:
+      summary: Get latest temperature reading and trend
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          type: number
+          format: float
+          description: Latitude in range [-90, 90]
+        - name: longitude
+          in: query
+          required: true
+          type: number
+          format: float
+          description: Longitude in range [-180, 180]
+      responses:
+        200:
+          description: Latest reading response
+          schema:
+            type: object
+            properties:
+              time:
+                type: string
+              temperature:
+                type: number
+              current_hour_avg:
+                type: number
+              readings_this_hour:
+                type: integer
+              trend:
+                type: string
+                enum: [up, down, stable]
+              is_live:
+                type: boolean
+        400:
+          description: Invalid latitude/longitude input
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /api/history:
+    get:
+      summary: Get the last 10 temperature readings
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          type: number
+          format: float
+          description: Latitude in range [-90, 90]
+        - name: longitude
+          in: query
+          required: true
+          type: number
+          format: float
+          description: Longitude in range [-180, 180]
+      responses:
+        200:
+          description: Last temperature readings
+          schema:
+            type: object
+            properties:
+              lastTimestamps:
+                type: array
+                items:
+                  type: string
+              lastTemperatures:
+                type: array
+                items:
+                  type: number
+              updateInterval:
+                type: integer
+              count:
+                type: integer
+              isHourlyAverage:
+                type: boolean
+        400:
+          description: Invalid latitude/longitude input
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /api/weekly-stats:
+    get:
+      summary: Get weekly min/max/average temperatures
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          type: number
+          format: float
+          description: Latitude in range [-90, 90]
+        - name: longitude
+          in: query
+          required: true
+          type: number
+          format: float
+          description: Longitude in range [-180, 180]
+      responses:
+        200:
+          description: Weekly stats response
+          schema:
+            type: object
+            properties:
+              dates:
+                type: array
+                items:
+                  type: string
+              minTemps:
+                type: array
+                items:
+                  type: number
+              maxTemps:
+                type: array
+                items:
+                  type: number
+              avgTemps:
+                type: array
+                items:
+                  type: number
+        400:
+          description: Invalid latitude/longitude input
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Server error
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              error:
+                type: string
+              dates:
+                type: array
+                items:
+                  type: string
+              minTemps:
+                type: array
+                items:
+                  type: number
+              maxTemps:
+                type: array
+                items:
+                  type: number
+              avgTemps:
+                type: array
+                items:
+                  type: number
+
+  /api/predict:
+    get:
+      summary: Get hourly prediction for a selected day
+      parameters:
+        - name: day
+          in: query
+          required: false
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 1
+          description: Prediction day index where 1 is tomorrow
+      responses:
+        200:
+          description: Day prediction response
+          schema:
+            type: object
+            properties:
+              day:
+                type: integer
+              date:
+                type: string
+              day_of_week:
+                type: string
+              timestamps:
+                type: array
+                items:
+                  type: string
+              predictions:
+                type: array
+                items:
+                  type: number
+              hourly:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    hour:
+                      type: integer
+                    time:
+                      type: string
+                    temperature:
+                      type: number
+              min_temp:
+                type: number
+              max_temp:
+                type: number
+              avg_temp:
+                type: number
+        400:
+          description: Invalid day input
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /api/forecast:
+    get:
+      summary: Get 5-day hourly forecast
+      responses:
+        200:
+          description: Forecast response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              days:
+                type: integer
+              last_updated:
+                type: string
+              next_update:
+                type: string
+              update_frequency:
+                type: string
+              forecast:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    day_number:
+                      type: integer
+                    date:
+                      type: string
+                    day_of_week:
+                      type: string
+                    min_temp:
+                      type: number
+                    max_temp:
+                      type: number
+                    avg_temp:
+                      type: number
+                    prediction_count:
+                      type: integer
+                    hourly:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          hour:
+                            type: integer
+                          time:
+                            type: string
+                          temperature:
+                            type: number
+                          timestamp:
+                            type: string
+        500:
+          description: Server error
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              error:
+                type: string
+
+  /:
+    get:
+      summary: Serve frontend index or static asset root
+      produces:
+        - text/html
+      responses:
+        200:
+          description: Frontend HTML page
+
+  /{path}:
+    get:
+      summary: Serve frontend static assets or fallback index
+      produces:
+        - text/html
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+          description: Frontend asset path
+      responses:
+        200:
+          description: Static asset or frontend HTML page
+
+definitions:
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: string
