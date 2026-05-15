@@ -1,29 +1,44 @@
-# this is python image that will be used 
-FROM python:3.12-slim
+FROM python:3.11-slim AS builder
 
-
-# Set environment variables for the image
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set working directory inside the container to /app
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+RUN pip install --upgrade pip \
+    && pip wheel --wheel-dir /wheels -r requirements.txt
+
+
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/home/app/.local/bin:$PATH"
+
 WORKDIR /app
 
-# Copy everything from the current folder (backend/) into the image
-COPY . /app
+RUN useradd --create-home --shell /bin/bash app
 
-# Create a virtual environment
-RUN python -m venv venv
+COPY --from=builder /wheels /wheels
+COPY requirements.txt .
 
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
+    && rm -rf /wheels
 
-# Activate virtual env and install dependencies
-RUN . venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
+COPY --chown=app:app . .
 
-# Make sure the virtual environment is used by default
-ENV PATH="/app/venv/bin:$PATH"
+RUN mkdir -p /app/logs && chown -R app:app /app
 
-# Expose default Flask port 
+USER app
+
 EXPOSE 5000
 
-# Start the app once the conainer is running 
-CMD ["venv/bin/python", "app.py"]
+CMD ["python", "app.py"]
