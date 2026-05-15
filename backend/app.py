@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 from flask import Flask, jsonify, request, send_from_directory, g
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from services.weather_fetcher import *
 from models import *
 from validators import validate_latitude, validate_longitude, validate_day
@@ -23,6 +25,15 @@ configure_logging()
 app = Flask(__name__)
 CORS(app)
 logger = get_logger(__name__)
+app.config['RATELIMIT_HEADERS_ENABLED'] = True
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri=os.getenv('RATELIMIT_STORAGE_URI', 'memory://'),
+)
+DATA_RATE_LIMIT = os.getenv('DATA_RATE_LIMIT', '60 per minute')
+PREDICTION_RATE_LIMIT = os.getenv('PREDICTION_RATE_LIMIT', '10 per minute')
 
 def load_swagger_template():
     spec_path = os.path.join(os.path.dirname(__file__), 'openapi.yml')
@@ -62,6 +73,18 @@ def load_swagger_template():
 
 
 swagger = Swagger(app, template=load_swagger_template())
+
+
+@app.errorhandler(429)
+def rate_limit_exceeded(error):
+    retry_after = getattr(error, 'retry_after', None)
+    response = jsonify({
+        'error': 'Too many requests',
+        'message': 'Rate limit exceeded. Please retry later.',
+    })
+    if retry_after is not None:
+        response.headers['Retry-After'] = str(retry_after)
+    return response, 429
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
@@ -135,6 +158,7 @@ def log_request_end(response):
     return response
 
 @app.route('/api/latest', methods=['GET'])
+@limiter.limit(DATA_RATE_LIMIT)
 def get_latest_temperature():
     """Get the latest temperature reading and current hour's average"""
     lat_raw = request.args.get('latitude')
@@ -216,6 +240,7 @@ def get_latest_temperature():
         conn.close()
 
 @app.route('/api/history', methods=['GET'])
+@limiter.limit(DATA_RATE_LIMIT)
 def get_temperature_history():
     """Get the last 10 individual temperature readings"""
     lat_raw = request.args.get('latitude')
@@ -281,6 +306,7 @@ def get_temperature_history():
         conn.close()
 
 @app.route('/api/weekly-stats', methods=['GET'])
+@limiter.limit(DATA_RATE_LIMIT)
 def get_weekly_stats():
     try:
         lat_raw = request.args.get('latitude')
@@ -366,6 +392,7 @@ def get_weekly_stats():
         })
 
 @app.route('/api/predict', methods=['GET'])
+@limiter.limit(PREDICTION_RATE_LIMIT)
 def predict_temperature():
     """Get temperature predictions from database"""
     try:
@@ -533,6 +560,7 @@ def predict_for_day(day):
             pass
 
 @app.route('/api/forecast', methods=['GET'])
+@limiter.limit(PREDICTION_RATE_LIMIT)
 def get_forecast():
     """
     Get a comprehensive 5-day hourly forecast.
