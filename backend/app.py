@@ -14,6 +14,8 @@ from services.weather_fetcher import *
 from models import *
 from validators import validate_latitude, validate_longitude, validate_day
 from logging_config import configure_logging, get_logger
+from flasgger import Swagger
+import yaml
 
 load_dotenv()
 configure_logging()
@@ -21,6 +23,45 @@ configure_logging()
 app = Flask(__name__)
 CORS(app)
 logger = get_logger(__name__)
+
+def load_swagger_template():
+    spec_path = os.path.join(os.path.dirname(__file__), 'openapi.yml')
+    fallback_template = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'IoT Temp Watch API',
+            'version': '1.0.0',
+            'description': 'OpenAPI documentation for the IoT Temp Watch backend.',
+        },
+        'basePath': '/',
+        'schemes': ['http'],
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'paths': {},
+        'definitions': {},
+    }
+
+    try:
+        with open(spec_path, encoding='utf-8') as spec_file:
+            loaded_template = yaml.safe_load(spec_file) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        logger.exception(
+            'Failed to load OpenAPI spec; starting with a minimal fallback template',
+            extra={'spec_path': spec_path, 'error': str(exc)},
+        )
+        return fallback_template
+
+    if not isinstance(loaded_template, dict):
+        logger.warning(
+            'OpenAPI spec is not a mapping; starting with a minimal fallback template',
+            extra={'spec_path': spec_path},
+        )
+        return fallback_template
+
+    return loaded_template
+
+
+swagger = Swagger(app, template=load_swagger_template())
 
 UPDATE_INTERVAL_SECONDS = 60
 PREDICTION_UPDATE_HOURS = 24
