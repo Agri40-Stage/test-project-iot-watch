@@ -1,0 +1,30 @@
+[
+  {
+    "crop": "citrus",
+    "risks": [
+      { "type": "frost", "condition": "temp < 2", "advice": "Activate frost protection immediately. Citrus trees suffer irreversible damage below 2°C." },
+      { "type": "heat_stress", "condition": "temp > 40", "advice": "Irrigate during early morning. Prolonged heat above 40°C causes fruit drop." }
+    ]
+  },
+  {
+    "crop": "tomato",
+    "risks": [
+      { "type": "cold_damage", "condition": "temp < 10", "advice": "Cover plants at night. Tomatoes stop growing below 10°C." },
+      { "type": "heat_stress", "condition": "temp > 35", "advice": "Shade and increase irrigation. Pollen becomes non-viable above 35°C." }
+    ]
+  },
+  {
+    "crop": "wheat",
+    "risks": [
+      { "type": "frost", "condition": "temp < 0", "advice": "Monitor soil moisture. Frost on dry soil is more damaging than on moist soil." },
+      { "type": "heat_stress", "condition": "temp > 32", "advice": "Heat above 32°C during grain fill reduces yield significantly." }
+    ]
+  },
+  {
+    "crop": "potato",
+    "risks": [
+      { "type": "frost", "condition": "temp < 3", "advice": "Tubers are damaged below 3°C. Hill up soil around plants for insulation." },
+      { "type": "heat_stress", "condition": "temp > 30", "advice": "Tuber formation stops above 30°C. Consider shade netting." }
+    ]
+  }
+]
